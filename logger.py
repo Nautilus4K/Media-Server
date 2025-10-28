@@ -12,13 +12,13 @@ class ConsoleLogger:
          self.verbose = verbose
 
     def log(self, text: str):
-        if self.verbose: console.print(timestamp(), "  INFO   ", text)
+        if self.verbose: console.print(timestamp(), " INFO  ", text)
 
     def logerr(self, text: str):
-        if self.verbose: console.print(timestamp(), "  [red]ERROR[/red]  ", text)
+        if self.verbose: console.print(timestamp(), " [red]ERROR[/red] ", text)
 
     def logwarn(self, text: str):
-        if self.verbose: console.print(timestamp(), "  [yellow]WARN[/yellow]   ", text)
+        if self.verbose: console.print(timestamp(), " [yellow]WARN[/yellow]  ", text)
 
     def logok(self, text: str):
-        if self.verbose: console.print(timestamp(), "   [green]OK[/green]    ", text)
+        if self.verbose: console.print(timestamp(), "  [green]OK[/green]   ", text)
