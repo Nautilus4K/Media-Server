@@ -7,8 +7,23 @@
         <title>Media Server - %%webname%%</title>
 
         <link rel="stylesheet" href="/src/style.css">
+
+        <script src="src/script.js" defer></script>
     </head>
     <body>
-        
+        <div class="sidebar">
+            <h1>Media Server</h1>
+            <!-- Big ass area -->
+            <button onclick="switchMedia('music')">Music</button>
+            <button onclick="switchMedia('movies')">Movies</button>
+        </div>
+        <div id="main" class="main_container">
+            <div id="movies_block" class="main">
+                <h1>Movies</h1>
+            </div>
+            <div id="music_block" class="main">
+                <h1>Music</h1>
+            </div>
+        </div>
     </body>
 </html>
