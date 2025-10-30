@@ -14,8 +14,16 @@
         <div class="sidebar">
             <h1>Media Server</h1>
             <!-- Big ass area -->
-            <button onclick="switchMedia('music')">Music</button>
-            <button onclick="switchMedia('movies')">Movies</button>
+
+            <button class="switcher" onclick="switchMedia('music')">
+                <p class="full">🎵 Music</p>
+                <p class="compact">🎵</p>
+            </button>
+
+            <button class="switcher" onclick="switchMedia('movies')">
+                <p class="full">🎬 Movies</p>
+                <p class="compact">🎬</p>
+            </button>
         </div>
         <div id="main" class="main_container">
             <div id="movies_block" class="main">

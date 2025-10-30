@@ -41,11 +41,11 @@ html, body {
     font-size: 20px;
 }
 
-.sidebar button {
+.switcher {
     background-color: transparent;
 
-    margin: 10px 20px;
-    padding: 10px 20px;
+    margin: 5px 20px;
+    padding: 5px 20px;
     border-radius: 5px;
     border: 0;
     
@@ -55,9 +55,18 @@ html, body {
     transition: .3s;
 }
 
-.sidebar button:hover {
+.switcher:hover {
     background-color: var(--hover-color);
     cursor: pointer;
+}
+
+/* Full display and compact display */
+.switcher .full {
+    display: block;
+}
+
+.switcher .compact {
+    display: none;
 }
 
 .main_container {
@@ -92,4 +101,26 @@ html, body {
     /* The headers for these things. Gotta be big and BOLD */
     margin: 40px 40px;
     font-size: 20px;
+}
+
+@media only screen and (max-device-width: 480px) {
+    .sidebar {
+        width: auto;
+    }
+
+    .sidebar h1 {
+        display: none;
+    }
+
+    .switcher {
+        margin-top: 10px;
+    }
+
+    .switcher .full {
+        display: none;
+    }
+
+    .switcher .compact {
+        display: block;
+    }
 }
