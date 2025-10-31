@@ -7,6 +7,9 @@ import argparse
 import traceback
 import mimetypes
 import json
+import hashlib
+import tinytag
+import unicodedata
 # import socket
 
 # WSGI app
@@ -37,12 +40,28 @@ valid_audio_extensions = ['.mp3', '.ogg', '.wav']
 
 HOST = "0.0.0.0"
 PORT = 8000
+VERSION = '31.10.25'
 
 def terminate():
     exit(0)
 
-discovered_video_entries = []
-discovered_audio_entries = []
+def normalize_to_ascii(text: str) -> str:
+    # Normalize to decomposed form (separate base char + accent)
+    normalized = unicodedata.normalize('NFKD', text)
+    # Encode to ASCII, ignore non-ASCII bytes (accents etc.)
+    ascii_text = normalized.encode('ascii', 'ignore').decode('ascii')
+    return ascii_text
+
+HASH_LENGTH = 8
+def gen_id(file_unique_name):
+    # return os.path.basename(os.path.abspath(file_unique_name)) + hashlib.sha256(file_unique_name.encode('utf-8')).hexdigest()[:HASH_LENGTH]
+    hashed = hashlib.sha256(file_unique_name.encode('utf-8')).hexdigest()[:HASH_LENGTH]
+    name, ext = os.path.splitext(os.path.basename(os.path.abspath(file_unique_name)))
+
+    return normalize_to_ascii(name).replace(" ", "") + "-" + hashed
+
+audio_entries = {}
+video_entries = {}
 safely_named = True
 video_structure = {}
 
@@ -59,6 +78,24 @@ PLACEHOLDER_DICTIONARY = { # This shouldnt have been required. Fucking shit.
     'ip_addr': '?',
     'webname': 'Orestia'
 }
+
+def api_requests(path) -> tuple[str, str]:
+    status = '200 OK'
+    return_data = {}
+
+    return_data['api_version'] = VERSION
+    return_data['path'] = path
+
+    if path == "/api/music_list" or path == "/api/music_list/":
+        # Good grief
+        # We gotta get all the musics sorted out now
+        id_list = []
+        for _id in audio_entries:
+            id_list.append(_id)
+        
+        return_data["result"] = id_list
+
+    return json.dumps(return_data), status
 
 def webapplication(environ, start_response):
     """
@@ -84,6 +121,9 @@ def webapplication(environ, start_response):
                     PLACEHOLDER_PREFIX + item + PLACEHOLDER_SUFFIX, 
                     PLACEHOLDER_DICTIONARY[item]
                 )
+    elif path.startswith("/api/") or path == "/api":
+        headers = [('Content-type', 'application/json; charset=utf-8')]
+        return_string, status = api_requests(path)
     else:
         # Serve other files from WEBROOT_PATH
         full_path = os.path.join(WEBROOT_PATH, path.lstrip("/"))
@@ -91,6 +131,7 @@ def webapplication(environ, start_response):
         if not os.path.isfile(full_path):
             # File not found
             headers = [('Content-type', 'text/plain; charset=utf-8')]
+            status = '404 Not Found'
             return_string = "404 Not Found"
         else:
             # Detect MIME type automatically
@@ -122,6 +163,9 @@ if __name__ == "__main__":
     if not os.path.exists(dirname):
         con.logerr(f"Given directory of [blue]{dirname}[/blue] DOES NOT EXISTS. Stopping right now...")
         terminate()
+
+    discovered_video_entries = []
+    discovered_audio_entries = []
 
     def discover_paths(d: int, cur_dir: str):
         global safely_named, discovered_video_entries, discovered_audio_entries
@@ -164,6 +208,29 @@ if __name__ == "__main__":
 
     if not safely_named:
         con.logwarn("Files are [bold red]NOT[/bold red] safely named (not entirely ASCII characters). This may cause some problems later on or problems with certain filesystems. [italic]Be aware[/italic] of the risks.")
+
+    # It wouldn't hurt to cache this first
+    for entry in discovered_audio_entries:
+        _id = gen_id(entry)
+        audio_entries[_id] = {}
+        audio_entries[_id]["path"] = entry
+        
+        try:
+            tag = tinytag.TinyTag.get(entry)
+
+            audio_entries[_id]["title"] = tag.title
+            audio_entries[_id]["artist"] = tag.artist
+            audio_entries[_id]["album"] = tag.album
+            audio_entries[_id]["genre"] = tag.genre
+            audio_entries[_id]["year"] = tag.year
+            audio_entries[_id]["duration"] = tag.duration
+            audio_entries[_id]["bitrate"] = tag.bitrate
+        except Exception as e:
+            con.logerr(f"Error while loading tag of file {entry}")
+            traceback.print_exc()
+
+
+    con.logok("Generated unique identifiers for music files.")
 
     # With all that bs done. Its time for us to try making this into a dict
     # In that dict, we will have to create key : value pairs that represents folders and each of its contents (this is for videos only)
