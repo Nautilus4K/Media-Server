@@ -64,7 +64,7 @@ audio_entries = {}
 video_entries = {}
 safely_named = True
 video_structure = {}
-
+redact_file_path = True
 
 # WSGI Interface area
 # This is web app territory
@@ -94,6 +94,22 @@ def api_requests(path) -> tuple[str, str]:
             id_list.append(_id)
         
         return_data["result"] = id_list
+    elif path.startswith("/api/get_music_data"):
+        song_id = os.path.basename(path)
+        if song_id == "get_music_data":
+            return_data["msg"] = "Missing ID."
+            status = "400 Bad Request"
+        else:
+            # Let's go
+            if song_id not in audio_entries:
+                # Fuck
+                return_data["msg"] = "No song with given ID."
+                status = "404 Not Found"
+            else:
+                return_data["result"] = audio_entries[song_id]
+
+                # Remove the sensitive part: File path
+                if redact_file_path: return_data["result"]["path"] = "REDACTED"
 
     return json.dumps(return_data), status
 
@@ -107,6 +123,8 @@ def webapplication(environ, start_response):
     method = environ['REQUEST_METHOD']
     path = environ['PATH_INFO']
     query = environ['QUERY_STRING']
+
+    con.log(f"[green]{environ["REMOTE_ADDR"]}[/green] --> [blue]{path}[/blue]")
 
     if path == "/debug":
         return_string = f"Method: {method}\nPath: {path}\nQuery: {query}"
@@ -175,7 +193,11 @@ if __name__ == "__main__":
             return
 
         # print(cur_dir)
-        entries = os.listdir(cur_dir)
+        try:
+            entries = os.listdir(cur_dir)
+        except Exception as e:
+            con.logerr(f"Failure to list directory [blue]{cur_dir}[/blue] with error [red]{e}[/red]")
+            return
 
         for entry in entries:
             full_path = os.path.join(cur_dir, entry)
@@ -192,7 +214,7 @@ if __name__ == "__main__":
 
                     if not name.isascii(): safely_named = False
             else:
-                discover_paths(d - 1, full_path)
+                if not os.path.islink(full_path): discover_paths(d - 1, full_path)
 
     con.log("Beginning recursive discovery.")
     discovertime_begin = time.time()
