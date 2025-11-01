@@ -57,7 +57,7 @@ function switchMedia(type) {
                 
                 // Now render the sorted data
                 validData.forEach(item => {
-                    console.log(item.id, item.data);
+                    // console.log(item.id, item.data);
                     
                     let musicRow = document.createElement("tr");
                     let titleCell = document.createElement("td");
