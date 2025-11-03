@@ -129,6 +129,20 @@ html, body {
     border-radius: 15px;
 }
 
+.title_col {
+    display: flex;
+    flex-direction: row;
+}
+
+.music_list td p {
+    padding-left: 20px;
+}
+
+.music_list td img {
+    width: 50px;
+    height: 50px;
+}
+
 .music_list tr:nth-child(even) {
     background-color: var(--background-color-higher);
     border-radius: 15px;

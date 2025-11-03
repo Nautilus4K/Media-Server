@@ -8,7 +8,12 @@ import traceback
 import mimetypes
 import json
 import hashlib
-import tinytag
+# import tinytag
+from tinytag import TinyTag
+from mutagen.id3 import ID3, APIC
+from mutagen.oggvorbis import OggVorbis
+from mutagen.flac import Picture
+import base64
 import unicodedata
 # import socket
 
@@ -60,6 +65,50 @@ def gen_id(file_unique_name):
 
     return normalize_to_ascii(name).replace(" ", "") + "-" + hashed
 
+def extract_metadata(path):
+    # Extract basic metadata with TinyTag
+    try:
+        tag = TinyTag.get(path)
+    except Exception:
+        tag = None
+    
+    info = {
+        "title": tag.title if tag else None,
+        "artist": tag.artist if tag else None,
+        "album": tag.album if tag else None,
+        "genre": tag.genre if tag else None,
+        "year": tag.year if tag else None,
+        "duration": round(tag.duration, 2) if tag and tag.duration else None,
+        "bitrate": int(tag.bitrate) if tag and tag.bitrate else None,
+        "cover": None,
+        "cover_mime": None,
+    }
+    
+    # Extract cover art (still using mutagen)
+    ext = os.path.splitext(path)[1].lower()
+    
+    try:
+        if ext == ".mp3":
+            tags = ID3(path)
+            for tag in tags.values():
+                if isinstance(tag, APIC) and tag.type == 3:  # front cover
+                    info["cover"] = base64.b64encode(tag.data).decode("ascii")
+                    info["cover_mime"] = tag.mime
+                    break
+        
+        elif ext == ".ogg":
+            audio = OggVorbis(path)
+            pics = audio.get("metadata_block_picture")
+            if pics:
+                pic = Picture(base64.b64decode(pics[0]))
+                info["cover"] = base64.b64encode(pic.data).decode("ascii")
+                info["cover_mime"] = pic.mime
+    
+    except Exception:
+        pass  # No cover art available
+    
+    return info
+
 audio_entries = {}
 video_entries = {}
 safely_named = True
@@ -109,7 +158,7 @@ def api_requests(path) -> tuple[str, str]:
                 return_data["result"] = audio_entries[song_id]
 
                 # Remove the sensitive part: File path
-                if redact_file_path: return_data["result"]["path"] = "REDACTED"
+                if redact_file_path: return_data["result"]["path"] = "/redacted"
 
     return json.dumps(return_data), status
 
@@ -168,7 +217,7 @@ def webapplication(environ, start_response):
                     return_string = f.read()
 
     start_response(status, headers)
-    return [return_string.encode('utf-8')]
+    return [return_string.encode('utf-8') if isinstance(return_string, str) else return_string]
 
 
 # Main area of code
@@ -238,15 +287,10 @@ if __name__ == "__main__":
         audio_entries[_id]["path"] = entry
         
         try:
-            tag = tinytag.TinyTag.get(entry)
+            # tag = tinytag.TinyTag.get(entry)
 
-            audio_entries[_id]["title"] = tag.title
-            audio_entries[_id]["artist"] = tag.artist
-            audio_entries[_id]["album"] = tag.album
-            audio_entries[_id]["genre"] = tag.genre
-            audio_entries[_id]["year"] = tag.year
-            audio_entries[_id]["duration"] = tag.duration
-            audio_entries[_id]["bitrate"] = tag.bitrate
+
+            audio_entries[_id] = extract_metadata(entry)
         except Exception as e:
             con.logerr(f"Error while loading tag of file {entry}")
             traceback.print_exc()

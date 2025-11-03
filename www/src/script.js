@@ -45,6 +45,8 @@ function switchMedia(type) {
                 })
             );
 
+            // console.log(musicDataPromises);
+
             // Wait for all fetches to complete
             Promise.all(musicDataPromises).then(musicDataArray => {
                 // Filter out any failed fetches
@@ -64,7 +66,26 @@ function switchMedia(type) {
                     let artistCell = document.createElement("td");
                     let durationCell = document.createElement("td");
                     
-                    titleCell.textContent = item.data.title;
+                    // titleCell.textContent = item.data.title;
+                    // Title cell contains the album cover art AND the title
+                    // Let's do this
+                    // Check if cover exists
+                    if (item.data.cover && item.data.cover_mime) {
+                        let coverArt = document.createElement('img')
+
+                        // Create a data URL from base64
+                        const coverUrl = `data:${item.data.cover_mime};base64,${item.data.cover}`;
+                        
+                        // Display in an <img> tag
+                        coverArt.src = coverUrl;
+
+                        titleCell.appendChild(coverArt)
+                    }
+
+                    let titleText = document.createElement('p')
+                    titleText.textContent = item.data.title
+                    titleCell.appendChild(titleText)
+
                     artistCell.textContent = item.data.artist;
                     durationCell.textContent = Math.ceil(item.data.duration) + "s";
                     
