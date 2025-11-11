@@ -125,7 +125,7 @@ PLACEHOLDER_PREFIX = "%%"
 PLACEHOLDER_SUFFIX = "%%"
 PLACEHOLDER_DICTIONARY = { # This shouldnt have been required. Fucking shit.
     'ip_addr': '?',
-    'webname': 'Orestia'
+    'webname': 'nautilus4k'
 }
 
 def api_requests(path) -> tuple[str, str]:
@@ -173,7 +173,7 @@ def webapplication(environ, start_response):
     path = environ['PATH_INFO']
     query = environ['QUERY_STRING']
 
-    con.log(f"[green]{environ["REMOTE_ADDR"]}[/green] --> [blue]{path}[/blue]")
+    con.log(f"[green]{environ["REMOTE_ADDR"]}[/green] --> [bright_blue]{path}[/bright_blue]")
 
     if path == "/debug":
         return_string = f"Method: {method}\nPath: {path}\nQuery: {query}"
@@ -225,10 +225,10 @@ if __name__ == "__main__":
     con.logok("Started media server. Thank you for choosing this shitty ass software!!!")
     con.log("")
     # con.log("")
-    con.log(f"Initializing directory [blue]{dirname}[/blue] with recursion depth of {"None" if depth_arg == -1 else depth_arg}.")
+    con.log(f"Initializing directory [bright_blue]{dirname}[/bright_blue] with recursion depth of {"None" if depth_arg == -1 else depth_arg}.")
 
     if not os.path.exists(dirname):
-        con.logerr(f"Given directory of [blue]{dirname}[/blue] DOES NOT EXISTS. Stopping right now...")
+        con.logerr(f"Given directory of [bright_blue]{dirname}[/bright_blue] DOES NOT EXISTS. Stopping right now...")
         terminate()
 
     discovered_video_entries = []
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         try:
             entries = os.listdir(cur_dir)
         except Exception as e:
-            con.logerr(f"Failure to list directory [blue]{cur_dir}[/blue] with error [red]{e}[/red]")
+            con.logerr(f"Failure to list directory [bright_blue]{cur_dir}[/bright_blue] with error [red]{e}[/red]")
             return
 
         for entry in entries:
@@ -254,12 +254,12 @@ if __name__ == "__main__":
             if os.path.isfile(full_path):
                 if ext in valid_video_extensions:
                     discovered_video_entries.append(full_path)
-                    con.log(f"VIDEO > [blue]{full_path}[/blue]")
+                    con.log(f"VIDEO > [bright_blue]{full_path}[/bright_blue]")
 
                     if not name.isascii(): safely_named = False
                 elif ext in valid_audio_extensions:
                     discovered_audio_entries.append(full_path)
-                    con.log(f"AUDIO > [blue]{full_path}[/blue]")
+                    con.log(f"AUDIO > [bright_blue]{full_path}[/bright_blue]")
 
                     if not name.isascii(): safely_named = False
             else:
@@ -275,7 +275,9 @@ if __name__ == "__main__":
         traceback.print_exc()
 
     discovertime_total = time.time() - discovertime_begin
-    con.logok(f"Successfully indexed entries with {len(discovered_video_entries)} video files and {len(discovered_audio_entries)} audio files in {discovertime_total} seconds.")
+    con.logok(f"Successfully indexed entries with {len(discovered_video_entries)} video files and {len(discovered_audio_entries)} \
+audio files in {discovertime_total} seconds. {len(discovered_video_entries) + len(discovered_audio_entries)} multimedia files \
+in total.")
 
     if not safely_named:
         con.logwarn("Files are [bold red]NOT[/bold red] safely named (not entirely ASCII characters). This may cause some problems later on or problems with certain filesystems. [italic]Be aware[/italic] of the risks.")

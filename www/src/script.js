@@ -65,6 +65,16 @@ function switchMedia(type) {
                     let titleCell = document.createElement("td");
                     let artistCell = document.createElement("td");
                     let durationCell = document.createElement("td");
+
+                    let songSelectBtn = document.createElement('button');
+                    songSelectBtn.textContent = "‣";
+                    songSelectBtn.onclick = () => {
+                        requestMusic(item.id);
+                    };
+                    // console.log(songSelectBtn.onclick);
+                    // console.log(item.id);
+                    // songSelectBtn.textContent = item.name;
+                    titleCell.appendChild(songSelectBtn);
                     
                     // titleCell.textContent = item.data.title;
                     // Title cell contains the album cover art AND the title
@@ -79,12 +89,12 @@ function switchMedia(type) {
                         // Display in an <img> tag
                         coverArt.src = coverUrl;
 
-                        titleCell.appendChild(coverArt)
+                        titleCell.appendChild(coverArt);
                     }
 
-                    let titleText = document.createElement('p')
-                    titleText.textContent = item.data.title
-                    titleCell.appendChild(titleText)
+                    let titleText = document.createElement('p');
+                    titleText.textContent = item.data.title;
+                    titleCell.appendChild(titleText);
 
                     artistCell.textContent = item.data.artist;
                     durationCell.textContent = Math.ceil(item.data.duration) + "s";
@@ -105,5 +115,9 @@ function switchMedia(type) {
     }
 }
 
+function requestMusic(id) {
+    console.log("requestMusic:", id);
+}
+
 // First start logics
-switchMedia('music') // Default at music
+switchMedia('music'); // Default at music
