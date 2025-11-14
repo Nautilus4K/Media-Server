@@ -47,16 +47,16 @@
                 <div id="music_controls" class="music_controls">
                     <div class="music_controls_info">
                         <div class="left">
-                            <img src="/src/nocover.svg">
+                            <img src="/src/nocover.svg" id="music_cover">
                         </div>
                         <div class="right">
-                            <p class="title">No Music</p>
-                            <p class="artist">No Artist</p>
+                            <p class="title" id="music_title">No Music</p>
+                            <p class="artist" id="music_artist">No Artist</p>
                         </div>
                     </div>
                     <div class="music_controls_main">
                         <div class="buttons">
-                            <button onclick="playMusic()">‣</button>
+                            <button onclick="playMusic()" id="playbutton">▶</button>
                         </div>
                         <div class="progress_area">
                             <p id="music_time_current">0:00</p>

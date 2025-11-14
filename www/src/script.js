@@ -76,6 +76,7 @@ function switchMedia(type) {
                 // Now render the sorted data
                 validData.forEach(item => {
                     // console.log(item.id, item.data);
+                    musicData[item.id] = item.data;
                     
                     let musicRow = document.createElement("tr");
                     let titleCell = document.createElement("td");
@@ -126,16 +127,35 @@ function switchMedia(type) {
                 });
             });
 
-            musicData = musicDataPromises; // Now use this globally
+            // musicData = musicDataPromises; // Now use this globally
         }).catch(error => {
             console.error("Error fetching music list json:", error);
         });
     }
 }
 
+// Seek logics
+const progressBar = document.getElementById("progress_bar");
+const progressFill = document.getElementById("progress_fill");
+const player = document.getElementById("player")
+const playButton = document.getElementById("playbutton");
+
+const musicCurrentTimeDisplay = document.getElementById("music_time_current");
+const musicDurationDisplay = document.getElementById("music_time_duration");
+
+const musicCover = document.getElementById("music_cover");
+const musicTitle = document.getElementById("music_title");
+const musicArtist = document.getElementById("music_artist");
+
 function requestMusic(id) {
     console.log("requestMusic:", id);
     player.src = "/music/" + id;
+
+    const coverUrl = `data:${musicData[id].cover_mime};base64,${musicData[id].cover}`;
+    musicCover.src = coverUrl;
+
+    musicArtist.textContent = musicData[id].artist;
+    musicTitle.textContent = musicData[id].title;
 
     if (!playing) playMusic();
     else {
@@ -144,15 +164,6 @@ function requestMusic(id) {
     }
 }
 
-
-// Seek logics
-const progressBar = document.getElementById("progress_bar");
-const progressFill = document.getElementById("progress_fill");
-const player = document.getElementById("player")
-
-const musicCurrentTimeDisplay = document.getElementById("music_time_current");
-const musicDurationDisplay = document.getElementById("music_time_duration");
-
 let playing = false;
 function playMusic() {
     console.log("playMusic");
@@ -160,9 +171,11 @@ function playMusic() {
     if (!playing) {
         playing = true;
         player.play();
+        playButton.textContent = "▐▐";
     } else {
         playing = false;
         player.pause();
+        playButton.textContent = "▶";
     }
 }
 
