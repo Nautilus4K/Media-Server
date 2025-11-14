@@ -22,3 +22,6 @@ class ConsoleLogger:
 
     def logok(self, text: str):
         if self.verbose: console.print(timestamp(), "  [green]OK[/green]   ", text)
+
+    def printjson(self, json: str):
+        if self.verbose: console.print_json(json)

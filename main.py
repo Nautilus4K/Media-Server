@@ -15,6 +15,7 @@ from mutagen.oggvorbis import OggVorbis
 from mutagen.flac import Picture
 import base64
 import unicodedata
+import copy
 # import socket
 
 # WSGI app
@@ -29,6 +30,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-v", "--verbose", action="store_true", help="Enable log messages.")
 parser.add_argument("directory", help="Surface directory to search. From this directory and going deeper, files are read (recursion).")
 parser.add_argument("-d", "--depth", action="store", help="Recursive search depth.")
+parser.add_argument("-a", "--address", action="store", type=str, help="Address to host the website. Default 127.0.0.1")
+parser.add_argument("-p", "--port", action="store", type=int, help="Port to host the website. Default 8000")
+parser.add_argument("-t", "--threads", action="store", type=int, help="Threads used for server. Default 4")
 
 args = parser.parse_args()
 
@@ -43,8 +47,9 @@ depth_arg = int(args.depth if args.depth else -1)
 valid_video_extensions = ['.mp4', '.mkv', '.mov', '.avi', '.webm']
 valid_audio_extensions = ['.mp3', '.ogg', '.wav']
 
-HOST = "0.0.0.0"
-PORT = 8000
+HOST = args.address if args.address is not None else "127.0.0.1"
+PORT = args.port if args.port is not None else 8000
+THREADCOUNT = args.threads if args.threads is not None else 4
 VERSION = '31.10.25'
 
 def terminate():
@@ -158,7 +163,17 @@ def api_requests(path) -> tuple[str, str]:
                 return_data["result"] = audio_entries[song_id]
 
                 # Remove the sensitive part: File path
-                if redact_file_path: return_data["result"]["path"] = "/redacted"
+                if redact_file_path: return_data["result"] = {
+                    "title": audio_entries[song_id]["title"],
+                    "artist": audio_entries[song_id]["artist"],
+                    "album": audio_entries[song_id]["album"],
+                    "genre": audio_entries[song_id]["genre"],
+                    "year": audio_entries[song_id]["year"],
+                    "duration": audio_entries[song_id]["duration"],
+                    "bitrate": audio_entries[song_id]["bitrate"],
+                    "cover": audio_entries[song_id]["cover"],
+                    "cover_mime": audio_entries[song_id]["cover_mime"],
+                }
 
     return json.dumps(return_data), status
 
@@ -191,6 +206,29 @@ def webapplication(environ, start_response):
     elif path.startswith("/api/") or path == "/api":
         headers = [('Content-type', 'application/json; charset=utf-8')]
         return_string, status = api_requests(path)
+    elif path.startswith("/music/"):
+        # Let's see what kind of music first
+        song_id = os.path.basename(path)
+        if song_id == "get_music_data":
+            return_string = None
+            status = "400 Bad Request"
+        else:
+            # Let's go
+            if song_id not in audio_entries:
+                # Fuck
+                return_string = None
+                status = "404 Not Found"
+            else:
+                # Good
+                # Detect MIME type automatically
+                mime_type, _ = mimetypes.guess_type(os.path.basename(audio_entries[song_id]["path"]))
+                if mime_type is None:
+                    mime_type = "application/octet-stream"
+
+                headers = [('Content-type', mime_type)]
+
+                with open(audio_entries[song_id]["path"], "rb") as f:
+                    return_string = f.read()
     else:
         # Serve other files from WEBROOT_PATH
         full_path = os.path.join(WEBROOT_PATH, path.lstrip("/"))
@@ -286,19 +324,23 @@ in total.")
     for entry in discovered_audio_entries:
         _id = gen_id(entry)
         audio_entries[_id] = {}
-        audio_entries[_id]["path"] = entry
         
         try:
             # tag = tinytag.TinyTag.get(entry)
-
-
             audio_entries[_id] = extract_metadata(entry)
+            audio_entries[_id]["path"] = entry
         except Exception as e:
             con.logerr(f"Error while loading tag of file {entry}")
             traceback.print_exc()
 
 
-    con.logok("Generated unique identifiers for music files.")
+    con.logok("Generated unique identifiers for music files. Structure:")
+    displayable_audio_entries = copy.deepcopy(audio_entries)
+
+    for entry in displayable_audio_entries:
+        displayable_audio_entries[entry]["cover"] = displayable_audio_entries[entry]["cover"][:10] + "..."
+
+    con.printjson(json.dumps(displayable_audio_entries))
 
     # With all that bs done. Its time for us to try making this into a dict
     # In that dict, we will have to create key : value pairs that represents folders and each of its contents (this is for videos only)
@@ -320,7 +362,7 @@ in total.")
             video_structure[nickname_entry] = [entry]
 
     con.logok("Refactored video files into a structure:")
-    console.print_json(json.dumps(video_structure))
+    con.printjson(json.dumps(video_structure))
 
-    con.log(f"Started web server on http://{HOST}:{PORT}/")
-    waitress.serve(webapplication, host=HOST, port=PORT)
+    con.log(f"Started web server on http://{HOST}:{PORT}/ with {THREADCOUNT} dedicated threads in use.")
+    waitress.serve(webapplication, host=HOST, port=PORT, threads=THREADCOUNT)

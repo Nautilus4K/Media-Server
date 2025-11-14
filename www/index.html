@@ -39,7 +39,34 @@
                             <th class="artist_col">Artist</th>
                             <th class="duration_col">Duration</th>
                         </tr>
+                        <tr>
+                            <td>Loading...</td>
+                        </tr>
                     </table>
+                </div>
+                <div id="music_controls" class="music_controls">
+                    <div class="music_controls_info">
+                        <div class="left">
+                            <img src="/src/nocover.svg">
+                        </div>
+                        <div class="right">
+                            <p class="title">No Music</p>
+                            <p class="artist">No Artist</p>
+                        </div>
+                    </div>
+                    <div class="music_controls_main">
+                        <div class="buttons">
+                            <button onclick="playMusic()">‣</button>
+                        </div>
+                        <div class="progress_area">
+                            <p id="music_time_current">0:00</p>
+                            <div class="progress" id="progress_bar">
+                                <div class="fill" id="progress_fill"></div>
+                            </div>
+                            <p id="music_time_duration">x:xx</p>
+                        </div>
+                        <audio id="player" src=""></audio>
+                    </div>
                 </div>
             </div>
         </div>

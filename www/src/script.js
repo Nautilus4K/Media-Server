@@ -3,6 +3,22 @@ const moviesBlock = document.getElementById("movies_block")
 
 const musicTable = document.getElementById("music_list")
 
+var musicData = {}
+
+function formatTime(sec) {
+    sec = Math.floor(sec);
+
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+
+    if (h > 0) {
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    } else {
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+}
+
 function switchMedia(type) {
     if (type === 'movies') {
         // Movies
@@ -23,7 +39,7 @@ function switchMedia(type) {
 
         // Refresh the whole thing by clearing the ?
         // Guaranteed to be safe here
-        musicTable.innerHTML = "<tr><th class=\"title_col\">Title</th><th class=\"artist_col\">Artist</th><th class=\"duration_col\">Duration</th></tr>";
+        musicTable.innerHTML = "<tr><th class=\"title_col\">Title</th><th class=\"artist_col\">Artist</th><th class=\"duration_col\">Duration</th></tr><tr><td>Loading...</td></tr>";
 
         fetch("/api/music_list", {
             method: "GET",
@@ -46,7 +62,7 @@ function switchMedia(type) {
             );
 
             // console.log(musicDataPromises);
-
+            musicTable.innerHTML = "<tr><th class=\"title_col\">Title</th><th class=\"artist_col\">Artist</th><th class=\"duration_col\">Duration</th></tr>";
             // Wait for all fetches to complete
             Promise.all(musicDataPromises).then(musicDataArray => {
                 // Filter out any failed fetches
@@ -109,6 +125,8 @@ function switchMedia(type) {
                     musicTable.appendChild(musicRow);
                 });
             });
+
+            musicData = musicDataPromises; // Now use this globally
         }).catch(error => {
             console.error("Error fetching music list json:", error);
         });
@@ -117,7 +135,58 @@ function switchMedia(type) {
 
 function requestMusic(id) {
     console.log("requestMusic:", id);
+    player.src = "/music/" + id;
+
+    if (!playing) playMusic();
+    else {
+        playMusic();
+        playMusic(); // Idk why this fixes it but whatever
+    }
 }
+
+
+// Seek logics
+const progressBar = document.getElementById("progress_bar");
+const progressFill = document.getElementById("progress_fill");
+const player = document.getElementById("player")
+
+const musicCurrentTimeDisplay = document.getElementById("music_time_current");
+const musicDurationDisplay = document.getElementById("music_time_duration");
+
+let playing = false;
+function playMusic() {
+    console.log("playMusic");
+
+    if (!playing) {
+        playing = true;
+        player.play();
+    } else {
+        playing = false;
+        player.pause();
+    }
+}
+
+progressBar.addEventListener("click", (e) => {
+    const rect = progressBar.getBoundingClientRect();
+
+    // Position within progress bar
+    const clickX = e.clientX - rect.left
+
+    // Convert to 0.0 -> 1.0
+    const percentage = clickX / rect.width;
+
+    // Apply
+    progressFill.style.flex = percentage;
+    player.currentTime = percentage * player.duration;
+});
+
+player.addEventListener("timeupdate", () => {
+    const progress = player.currentTime / player.duration;
+    progressFill.style.flex = progress;
+
+    musicCurrentTimeDisplay.textContent = formatTime(player.currentTime);
+    musicDurationDisplay.textContent = formatTime(player.duration);
+});
 
 // First start logics
 switchMedia('music'); // Default at music

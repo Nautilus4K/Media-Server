@@ -4,6 +4,7 @@
     --background-color-higher: #161616;
     --font-color: #ffffff;
     --hover-color: #ffffff18;
+    --prog-fill-color: #ffffff;
 }
 
 * {
@@ -143,6 +144,8 @@ html, body {
     border-radius: 15px;
     font-size: 30px;
     padding: 0;
+    margin-left: 0px;
+    padding: 0 20px;
 
     transition: .3s;
 }
@@ -150,6 +153,7 @@ html, body {
 .music_list td button:hover {
     background-color: var(--hover-color);
     cursor: pointer;
+    margin-left: 5px;
 }
 
 .music_list td p {
@@ -164,6 +168,138 @@ html, body {
 .music_list tr:nth-child(even) {
     background-color: var(--background-color-higher);
     border-radius: 15px;
+}
+
+.music_controls {
+    display: flex;
+    flex-direction: row;
+
+    height: 100px;
+}
+
+.music_controls_info {
+    display: flex;
+    flex-direction: row;
+    
+    width: 300px;
+
+    align-items: center; /* Vertically center all children */
+
+    margin: 15px;
+}
+
+.music_controls_info .left img {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+}
+
+.music_controls_info .right {
+    display: flex;
+    flex-direction: column;
+
+    padding-left: 20px;
+}
+
+.music_controls_info .right .title {
+    padding: 3px 0;
+    margin: 0;
+    font-size: 14px;
+}
+
+.music_controls_info .right .artist {
+    padding: 3px 0;
+    margin: 0;
+    font-size: 11px;
+}
+
+.music_controls_main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    margin: 15px;
+}
+
+.music_controls_main .buttons {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+    margin: 0;
+
+    height: 35px;
+}
+
+.music_controls_main .buttons button {
+    background-color: transparent;
+    border: 0;
+    
+    width: 30px;
+    height: 30px;
+
+    align-items: center;
+    text-align: center;
+
+    font-size: 30px;
+
+    height: 35px;
+    width: 35px;
+
+    background-color: var(--background-color-higher);
+    border-radius: 50%;
+
+    padding: 0;
+    margin: 0;
+    line-height: 0;
+
+    transition: .3s;
+}
+
+.music_controls_main .buttons button:hover {
+    background-color: var(--hover-color);
+    cursor: pointer;
+}
+
+.music_controls_main .progress_area {
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+}
+
+.music_controls_main .progress_area p {
+    margin: 20px;
+}
+
+.music_controls_main .progress_area .progress {
+    display: flex;
+    flex-direction: row;
+
+    flex: 1;
+
+    background-color: var(--background-color-higher);
+    height: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    border-radius: 20px;
+}
+
+.music_controls_main .progress_area .progress {
+    cursor: pointer;
+}
+
+.music_controls_main .progress_area .progress .fill {
+    display: flex;
+    flex-direction: row;
+
+    background-color: var(--prog-fill-color);
+    flex: 0;
+    border-radius: 20px;
+
+    transition: .15s;
 }
 
 @media only screen and (max-device-width: 480px) {
@@ -217,12 +353,58 @@ html, body {
 
     .music_list th,
     .music_list td {
-        padding: 10px 20px;
-        font-size: 11px;
+        padding: 5px 10px;
+        /* font-size: 11px; */
+    }
+
+    .music_list td button {
+        width: 25px;
+        height: 25px;
+
+        margin-right: 15px;
+        background-color: transparent;
+        border: 0;
+        border-radius: 15px;
+        font-size: 15px;
+        padding: 0;
+        margin-left: 0px;
+        padding: 0 15px;
+
+        transition: .3s;
+    }
+
+    .music_list td button:hover {
+        background-color: var(--hover-color);
+        cursor: pointer;
+        margin-left: 5px;
+    }
+
+    .music_list td p {
+        padding-left: 15px;
+        margin: 0;
+    }
+
+    .music_list td img {
+        width: 25px;
+        height: 25px;
     }
 
     .music_list tr:nth-child(even) {
         background-color: var(--background-color-higher);
     }
 
+    .music_controls_info {
+        display: flex;
+        flex-direction: row;
+
+        width: 80px;
+
+        align-items: center; /* Vertically center all children */
+
+        margin: 15px;
+    }
+
+    .music_controls_info .right {
+        display: none;
+    }
 }
