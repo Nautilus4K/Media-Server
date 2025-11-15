@@ -2,3 +2,4 @@ rich
 mutagen
 tinytag
 waitress
+pillow

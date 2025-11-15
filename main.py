@@ -13,6 +13,8 @@ from tinytag import TinyTag
 from mutagen.id3 import ID3, APIC
 from mutagen.oggvorbis import OggVorbis
 from mutagen.flac import Picture
+from PIL import Image
+import io
 import base64
 import unicodedata
 import copy
@@ -70,13 +72,43 @@ def gen_id(file_unique_name):
 
     return normalize_to_ascii(name).replace(" ", "") + "-" + hashed
 
+def convert_to_jpeg_sizes(raw_bytes) -> dict:
+    """Convert raw image bytes into multiple JPEG sizes using Pillow."""
+    try:
+        img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+    except Exception:
+        return None
+
+    # Target resolutions
+    sizes = {
+        "500": (500, 500),
+        "300": (300, 300),
+        "180": (180, 180),
+        "64":  (64, 64),
+        "16":  (16, 16),
+    }
+
+    results = {}
+
+    for key, (w, h) in sizes.items():
+        try:
+            resized = img.resize((w, h), Image.LANCZOS)
+            output = io.BytesIO()
+            resized.save(output, format="JPEG", quality=90)
+            results[key] = output.getvalue()
+        except Exception:
+            results[key] = None  # Fail gracefully per size
+
+    return results
+
+
 def extract_metadata(path):
     # Extract basic metadata with TinyTag
     try:
         tag = TinyTag.get(path)
     except Exception:
         tag = None
-    
+
     info = {
         "title": tag.title if tag else None,
         "artist": tag.artist if tag else None,
@@ -85,33 +117,40 @@ def extract_metadata(path):
         "year": tag.year if tag else None,
         "duration": round(tag.duration, 2) if tag and tag.duration else None,
         "bitrate": int(tag.bitrate) if tag and tag.bitrate else None,
-        "cover": None,
-        "cover_mime": None,
+        "cover": None,  # Always store final JPEG bytes
     }
-    
-    # Extract cover art (still using mutagen)
+
     ext = os.path.splitext(path)[1].lower()
-    
+
     try:
+        # ------------------------------------------------------------
+        # MP3 (ID3)
+        # ------------------------------------------------------------
         if ext == ".mp3":
             tags = ID3(path)
-            for tag in tags.values():
-                if isinstance(tag, APIC) and tag.type == 3:  # front cover
-                    info["cover"] = base64.b64encode(tag.data).decode("ascii")
-                    info["cover_mime"] = tag.mime
+            for t in tags.values():
+                if isinstance(t, APIC):
+                    # Raw embedded image
+                    jpeg_sizes = convert_to_jpeg_sizes(t.data)
+                    if jpeg_sizes:
+                        info["cover"] = jpeg_sizes
                     break
-        
+
+        # ------------------------------------------------------------
+        # OGG (Vorbis)
+        # ------------------------------------------------------------
         elif ext == ".ogg":
             audio = OggVorbis(path)
             pics = audio.get("metadata_block_picture")
             if pics:
                 pic = Picture(base64.b64decode(pics[0]))
-                info["cover"] = base64.b64encode(pic.data).decode("ascii")
-                info["cover_mime"] = pic.mime
-    
+                jpeg_sizes = convert_to_jpeg_sizes(pic.data)
+                if jpeg_sizes:
+                    info["cover"] = jpeg_sizes
+
     except Exception:
-        pass  # No cover art available
-    
+        pass  # ignore cover art errors
+
     return info
 
 audio_entries = {}
@@ -170,9 +209,7 @@ def api_requests(path) -> tuple[str, str]:
                     "genre": audio_entries[song_id]["genre"],
                     "year": audio_entries[song_id]["year"],
                     "duration": audio_entries[song_id]["duration"],
-                    "bitrate": audio_entries[song_id]["bitrate"],
-                    "cover": audio_entries[song_id]["cover"],
-                    "cover_mime": audio_entries[song_id]["cover_mime"],
+                    "bitrate": audio_entries[song_id]["bitrate"]
                 }
 
     return json.dumps(return_data), status
@@ -229,6 +266,23 @@ def webapplication(environ, start_response):
 
                 with open(audio_entries[song_id]["path"], "rb") as f:
                     return_string = f.read()
+    elif path.startswith("/music_cover/"):
+         # Let's see what kind of music first
+        song_id = os.path.basename(path)
+        if song_id == "get_music_data":
+            return_string = None
+            status = "400 Bad Request"
+        else:
+            # Let's go
+            if song_id not in audio_entries:
+                # Fuck
+                return_string = None
+                status = "404 Not Found"
+            else:
+                # Good
+                headers = [('Content-type', 'image/jpeg')]
+
+                return_string = audio_entries[song_id]["cover"][query]
     else:
         # Serve other files from WEBROOT_PATH
         full_path = os.path.join(WEBROOT_PATH, path.lstrip("/"))
@@ -335,10 +389,10 @@ in total.")
 
 
     con.logok("Generated unique identifiers for music files. Structure:")
-    displayable_audio_entries = copy.deepcopy(audio_entries)
 
+    displayable_audio_entries = copy.deepcopy(audio_entries)
     for entry in displayable_audio_entries:
-        displayable_audio_entries[entry]["cover"] = displayable_audio_entries[entry]["cover"][:10] + "..."
+        displayable_audio_entries[entry].pop("cover")
 
     con.printjson(json.dumps(displayable_audio_entries))
 

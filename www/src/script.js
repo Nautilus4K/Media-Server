@@ -97,17 +97,15 @@ function switchMedia(type) {
                     // Title cell contains the album cover art AND the title
                     // Let's do this
                     // Check if cover exists
-                    if (item.data.cover && item.data.cover_mime) {
-                        let coverArt = document.createElement('img')
+                    let coverArt = document.createElement('img')
 
-                        // Create a data URL from base64
-                        const coverUrl = `data:${item.data.cover_mime};base64,${item.data.cover}`;
-                        
-                        // Display in an <img> tag
-                        coverArt.src = coverUrl;
+                    // Create a data URL from base64
+                    const coverUrl = '/music_cover/' + item.id + '?64';
+                    
+                    // Display in an <img> tag
+                    coverArt.src = coverUrl;
 
-                        titleCell.appendChild(coverArt);
-                    }
+                    titleCell.appendChild(coverArt);
 
                     let titleText = document.createElement('p');
                     titleText.textContent = item.data.title;
@@ -151,7 +149,7 @@ function requestMusic(id) {
     console.log("requestMusic:", id);
     player.src = "/music/" + id;
 
-    const coverUrl = `data:${musicData[id].cover_mime};base64,${musicData[id].cover}`;
+    const coverUrl = '/music_cover/' + id + '?500';
     musicCover.src = coverUrl;
 
     musicArtist.textContent = musicData[id].artist;
