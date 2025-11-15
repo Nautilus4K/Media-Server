@@ -165,6 +165,22 @@ html, body {
     height: 50px;
 }
 
+.music_list .play_container {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+
+    padding: 0;
+}
+
+.music_list td .play {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    margin: 0;
+}
+
 .music_list tr:nth-child(even) {
     background-color: var(--background-color-higher);
     border-radius: 15px;
@@ -255,6 +271,11 @@ html, body {
     line-height: 0;
 
     transition: .3s;
+}
+
+.music_controls_main .buttons button img {
+    width: 13px;
+    height: 13px;
 }
 
 .music_controls_main .buttons button:hover {

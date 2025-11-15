@@ -84,7 +84,8 @@ function switchMedia(type) {
                     let durationCell = document.createElement("td");
 
                     let songSelectBtn = document.createElement('button');
-                    songSelectBtn.textContent = "‣";
+                    songSelectBtn.innerHTML = '<img src="/src/play.svg" class="play">';
+                    songSelectBtn.className = "play_container";
                     songSelectBtn.onclick = () => {
                         requestMusic(item.id);
                     };
@@ -169,11 +170,11 @@ function playMusic() {
     if (!playing) {
         playing = true;
         player.play();
-        playButton.textContent = "▐▐";
+        playButton.src = "/src/pause.svg";
     } else {
         playing = false;
         player.pause();
-        playButton.textContent = "▶";
+        playButton.src = "/src/play.svg";
     }
 }
 
