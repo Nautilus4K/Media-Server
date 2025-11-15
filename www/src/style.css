@@ -133,6 +133,7 @@ html, body {
 .title_col {
     display: flex;
     flex-direction: row;
+    align-items: center; /* Add this to vertically center all items */
 }
 
 .music_list td button {
@@ -145,9 +146,9 @@ html, body {
     font-size: 30px;
     padding: 0;
     margin-left: 0px;
-    padding: 0 20px;
-
+    padding: 0 20px; /* This conflicts with padding: 0 above - remove one */
     transition: .3s;
+    flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .music_list td button:hover {
@@ -170,6 +171,8 @@ html, body {
     align-items: center;
     justify-content: center;
     height: 50px;
+
+    /* margin-left: 20px; */
 
     padding: 0;
 }
