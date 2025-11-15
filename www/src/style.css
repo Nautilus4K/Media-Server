@@ -5,6 +5,9 @@
     --font-color: #ffffff;
     --hover-color: #ffffff18;
     --prog-fill-color: #ffffff;
+    --normal-brightness: 200%;
+    --selected-brightness: 0%;
+    --selected-hover-color: #b8b8b8;
 }
 
 * {
@@ -270,15 +273,36 @@ html, body {
     border-radius: 50%;
 
     padding: 0;
-    margin: 0;
+    margin: 0 10px;
     line-height: 0;
 
-    transition: .3s;
+    transition: .2s;
+}
+
+.music_controls_main .buttons .selected {
+    background-color: var(--font-color);
+}
+
+.music_controls_main .buttons .selected:hover {
+    background-color: var(--selected-hover-color);
 }
 
 .music_controls_main .buttons button img {
+    background-color: transparent;
     width: 13px;
     height: 13px;
+    filter: brightness(var(--normal-brightness));
+}
+
+.music_controls_main .buttons button .selected {
+    background-color: transparent;
+    width: 13px;
+    height: 13px;
+    filter: brightness(var(--selected-brightness));
+}
+
+.music_controls_main .buttons button .selected:hover {
+    background-color: transparent;
 }
 
 .music_controls_main .buttons button:hover {

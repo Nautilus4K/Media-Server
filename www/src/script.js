@@ -19,6 +19,22 @@ function formatTime(sec) {
     }
 }
 
+function shuffleArray(array) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
 function switchMedia(type) {
     if (type === 'movies') {
         // Movies
@@ -146,6 +162,12 @@ const musicCover = document.getElementById("music_cover");
 const musicTitle = document.getElementById("music_title");
 const musicArtist = document.getElementById("music_artist");
 
+const shuffleButton = document.getElementById("shufflebutton_container");
+const shuffleButtonImg = document.getElementById("shufflebutton");
+
+var queue = [];
+var shuffle = false;
+
 function requestMusic(id) {
     console.log("requestMusic:", id);
     player.src = "/music/" + id;
@@ -155,6 +177,14 @@ function requestMusic(id) {
 
     musicArtist.textContent = musicData[id].artist;
     musicTitle.textContent = musicData[id].title;
+
+    if (shuffle) {
+        Object.keys(musicData).forEach(key => {
+            queue.push(key);
+        });
+
+        shuffleArray(queue);
+    }
 
     if (!playing) playMusic();
     else {
@@ -178,6 +208,18 @@ function playMusic() {
     }
 }
 
+function toggleShuffle() {
+    shuffle = !shuffle;
+
+    if (shuffle) {
+        shuffleButton.classList.add("selected");
+        shuffleButtonImg.classList.add("selected");
+    } else {
+        shuffleButton.classList.remove("selected");
+        shuffleButtonImg.classList.remove("selected");
+    }
+}
+
 progressBar.addEventListener("click", (e) => {
     const rect = progressBar.getBoundingClientRect();
 
@@ -198,6 +240,19 @@ player.addEventListener("timeupdate", () => {
 
     musicCurrentTimeDisplay.textContent = formatTime(player.currentTime);
     musicDurationDisplay.textContent = formatTime(player.duration);
+});
+
+player.addEventListener("ended", () => {
+    console.log("Ended.");
+    if (queue.length == 0) {
+        playing = false;
+        player.pause();
+        playButton.src = "/src/play.svg";
+    } else {
+        // Continue playing
+        const nextSong = queue.shift();
+        requestMusic(nextSong);
+    }
 });
 
 // First start logics
