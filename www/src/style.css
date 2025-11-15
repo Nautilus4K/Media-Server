@@ -302,7 +302,7 @@ html, body {
     transition: .15s;
 }
 
-@media only screen and (max-device-width: 480px) {
+@media only screen and (max-device-width: 600px) {
     .sidebar {
         width: 80px;
     }
@@ -401,10 +401,20 @@ html, body {
 
         align-items: center; /* Vertically center all children */
 
-        margin: 15px;
+        /* margin: 15px; */
+        margin-right: 5px;
     }
 
     .music_controls_info .right {
         display: none;
+    }
+
+    .music_controls_main {
+        margin-left: 5px;
+    }
+
+    .music_controls_main .progress_area p {
+        margin: 20px 5px;
+        font-size: 11px;
     }
 }
