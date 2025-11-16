@@ -165,8 +165,12 @@ const musicArtist = document.getElementById("music_artist");
 const shuffleButton = document.getElementById("shufflebutton_container");
 const shuffleButtonImg = document.getElementById("shufflebutton");
 
+const repeatButton = document.getElementById("repeatbutton_container");
+const repeatButtonImg = document.getElementById("repeatbutton");;
+
 var queue = [];
 var shuffle = false;
+var repeat = false;
 
 function requestMusic(id) {
     console.log("requestMusic:", id);
@@ -220,6 +224,18 @@ function toggleShuffle() {
     }
 }
 
+function toggleRepeat() {
+    repeat = !repeat;
+
+    if (repeat) {
+        repeatButton.classList.add("selected");
+        repeatButtonImg.classList.add("selected");
+    } else {
+        repeatButton.classList.remove("selected");
+        repeatButtonImg.classList.remove("selected");
+    }
+}
+
 progressBar.addEventListener("click", (e) => {
     const rect = progressBar.getBoundingClientRect();
 
@@ -244,14 +260,24 @@ player.addEventListener("timeupdate", () => {
 
 player.addEventListener("ended", () => {
     console.log("Ended.");
-    if (queue.length == 0) {
-        playing = false;
-        player.pause();
-        playButton.src = "/src/play.svg";
+    if (repeat) {
+        // Replay without changing song
+        console.log("Repeat.");
+        player.currentTime = 0;
+        playing = true;
+        player.play();
+        playButton.src = "/src/pause.svg";
     } else {
-        // Continue playing
-        const nextSong = queue.shift();
-        requestMusic(nextSong);
+        if (queue.length == 0) {
+            // Pause
+            playing = false;
+            player.pause();
+            playButton.src = "/src/play.svg";
+        } else {
+            // Continue playing
+            const nextSong = queue.shift();
+            requestMusic(nextSong);
+        }
     }
 });
 
