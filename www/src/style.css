@@ -170,20 +170,18 @@ html, body {
 }
 
 .music_list .play_container {
-    text-align: center;
-    align-items: center;
-    justify-content: center;
     height: 50px;
-
+    width: 50px;
     /* margin-left: 20px; */
-
+    /* padding-bottom: 10px; */
+    /* padding-top: 10px; */
     padding: 0;
 }
 
 .music_list td .play {
-    width: 10px;
-    height: 10px;
-    padding: 0;
+    width: 12px;
+    height: 12px;
+    padding: 19px;
     margin: 0;
 }
 

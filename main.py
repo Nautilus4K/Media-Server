@@ -38,7 +38,7 @@ parser.add_argument("-t", "--threads", action="store", type=int, help="Threads u
 
 args = parser.parse_args()
 
-dirPath = os.path.dirname(os.path.abspath(__file__))
+dirPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
 con = ConsoleLogger(args.verbose)
 
@@ -52,7 +52,7 @@ valid_audio_extensions = ['.mp3', '.ogg', '.wav']
 HOST = args.address if args.address is not None else "127.0.0.1"
 PORT = args.port if args.port is not None else 8000
 THREADCOUNT = args.threads if args.threads is not None else 4
-VERSION = '31.10.25'
+VERSION = '26.7.5'
 
 def terminate():
     exit(0)
@@ -172,6 +172,9 @@ PLACEHOLDER_DICTIONARY = { # This shouldnt have been required. Fucking shit.
     'webname': 'nautilus4k'
 }
 
+PLACEHOLDER_COVER_PATH = WEBROOT_PATH + "/src/nocover.svg"
+PLACEHOLDER_COVER = open(PLACEHOLDER_COVER_PATH, "r", encoding='utf-8').read()
+
 def api_requests(path) -> tuple[str, str]:
     status = '200 OK'
     return_data = {}
@@ -274,10 +277,11 @@ def webapplication(environ, start_response):
             status = "400 Bad Request"
         else:
             # Let's go
-            if song_id not in audio_entries:
+            if song_id not in audio_entries or audio_entries[song_id]["cover"] is None:
                 # Fuck
-                return_string = None
-                status = "404 Not Found"
+                headers = [('Content-type', 'image/svg+xml; charset=utf-8')]
+
+                return_string = PLACEHOLDER_COVER
             else:
                 # Good
                 headers = [('Content-type', 'image/jpeg')]
