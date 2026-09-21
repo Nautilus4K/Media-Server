@@ -2,26 +2,25 @@ from rich.console import Console
 from rich.text import Text
 import datetime
 
-console = Console()
-
 def timestamp() -> Text:
         return Text(datetime.datetime.now().isoformat(sep=" ", timespec="milliseconds"), style="dim italic")
 
 class ConsoleLogger:
     def __init__(self, verbose: bool):
-         self.verbose = verbose
+        self.verbose = verbose
+        self.console = Console() 
 
     def log(self, text: str):
-        if self.verbose: console.print(timestamp(), " INFO  ", text)
+        if self.verbose: self.console.print(timestamp(), " INFO  ", text)
 
     def logerr(self, text: str):
-        if self.verbose: console.print(timestamp(), " [red]ERROR[/red] ", text)
+        if self.verbose: self.console.print(timestamp(), " [red]ERROR[/red] ", text)
 
     def logwarn(self, text: str):
-        if self.verbose: console.print(timestamp(), " [yellow]WARN[/yellow]  ", text)
+        if self.verbose: self.console.print(timestamp(), " [yellow]WARN[/yellow]  ", text)
 
     def logok(self, text: str):
-        if self.verbose: console.print(timestamp(), "  [green]OK[/green]   ", text)
+        if self.verbose: self.console.print(timestamp(), "  [green]OK[/green]   ", text)
 
     def printjson(self, json: str):
-        if self.verbose: console.print_json(json)
+        if self.verbose: self.console.print_json(json)

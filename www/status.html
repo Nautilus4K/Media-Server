@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Server Status</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="icon" href="/favicon.svg">
+        
+        <script src="/src/general.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="/src/status.js" defer></script>
+    </head>
+    <body>
+        <h1 class="bighead">Server Status</h1>
+        <p class="bigdesc">(In the last 30 minutes)</p>
+
+        <p id="uptime_display" class="uptime_display">Uptime: <strong id="uptime">XX:XX:XX</strong></p>
+
+        <div id="mon_display" class="mon_display">
+            <div class="cpu_chart_container"><canvas id="cpu_chart"></canvas></div>
+
+            <div class="ram_chart_container"><canvas id="ram_chart"></canvas></div>
+
+            <div class="disk_and_net_charts_container">
+                <div class="net_chart_container"><canvas id="net_chart"></canvas></div>
+                <div class="disk_chart_container"><canvas id="disk_chart"></canvas></div>
+            </div>
+        </div>
+    </body>
+</html>

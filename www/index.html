@@ -1,76 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta lang="vi-VN" http-equiv="content-type" content="text/html; charset=UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <title>Media Server - %%webname%%</title>
-
-        <link rel="stylesheet" href="/src/style.css">
+        <title>Server managing panel</title>
+        <link rel="stylesheet" href="/css/style.css">
         <link rel="icon" href="/favicon.svg">
-
-        <script src="src/script.js" defer></script>
     </head>
-    <body>
-        <div class="sidebar">
-            <h1>Media Server</h1>
-            <!-- Big ass area -->
-
-            <button class="switcher" onclick="switchMedia('music')">
-                <p class="full">🎵 Music</p>
-                <p class="compact">🎵</p>
-            </button>
-
-            <button class="switcher" onclick="switchMedia('movies')">
-                <p class="full">🎬 Movies</p>
-                <p class="compact">🎬</p>
-            </button>
-        </div>
-        <div id="main" class="main_container">
-            <div id="movies_block" class="main">
-                <h1>Movies</h1>
-            </div>
-            <div id="music_block" class="main">
-                <h1>Music</h1>
-                <div class="music_list_container">
-                    <table class="music_list" id="music_list">
-                        <tr>
-                            <th class="title_col">Title</th>
-                            <th class="artist_col">Artist</th>
-                            <th class="duration_col">Duration</th>
-                        </tr>
-                        <tr>
-                            <td>Loading...</td>
-                        </tr>
-                    </table>
-                </div>
-                <div id="music_controls" class="music_controls">
-                    <div class="music_controls_info">
-                        <div class="left">
-                            <img src="/src/nocover.svg" id="music_cover">
-                        </div>
-                        <div class="right">
-                            <p class="title" id="music_title">No Music</p>
-                            <p class="artist" id="music_artist">No Artist</p>
-                        </div>
-                    </div>
-                    <div class="music_controls_main">
-                        <div class="buttons">
-                            <button onclick="toggleRepeat()" id="repeatbutton_container"><img src="/src/repeat.svg" id="repeatbutton"></button>
-                            <button onclick="playMusic()"><img src="/src/play.svg" id="playbutton"></button>
-                            <button onclick="toggleShuffle()" id="shufflebutton_container"><img src="/src/shuffle.svg"id="shufflebutton"></button>
-                        </div>
-                        <div class="progress_area">
-                            <p id="music_time_current">0:00</p>
-                            <div class="progress" id="progress_bar">
-                                <div class="fill" id="progress_fill"></div>
-                            </div>
-                            <p id="music_time_duration">x:xx</p>
-                        </div>
-                        <audio id="player" src=""></audio>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </body>
 </html>

@@ -1,9 +1,7 @@
-# 🎵 🎥 Media-Server: A robust way to host your media! (Music & Movies)
+# 🎵 🎥 Media-Server: Lightweight homemade server to host your files.
 
 > [!IMPORTANT]
-> This project is hard. And its gonna take a long while to be done, like my other project: [ATOMIC-Automatic-JUDGER](https://github.com/Nautilus4K/ATOMIC-Automatic-JUDGER).
-> 
-> On the other side of things, this will not be built with a user in mind because GUI programming is *really* hard. I really don't want to touch it again.
+> Changed direction sry. Streaming is not the case right now. I am gonna make this a lightweight server to host minecraft and NAS.
 > 
 
 ### Clone this repo to get started!

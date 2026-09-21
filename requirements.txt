@@ -1,5 +1,5 @@
 rich
-mutagen
-tinytag
 waitress
 pillow
+flask
+psutil
