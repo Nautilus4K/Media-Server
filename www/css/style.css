@@ -13,6 +13,11 @@
 :root {
     --text-color: #fff; /* Use white text color for dark mode */
     --background: #0a0a0a;
+    --border-color: #777;
+    --primary-color: #333;
+    --fail-color: #ff2222;
+
+    /* The status colors */
     --cpu-color: #319bff;
     --ram-color: #c531ff;
     --net-down-color: #53c44f;
@@ -34,62 +39,4 @@ html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-}
-
-.bighead {
-    font-weight: 800;
-    margin-bottom: 0;
-}
-
-.bigdesc {
-    font-style: italic;
-    margin-top: 0;
-}
-
-.mon_display {
-    display: flex;
-    flex-direction: column;
-    width: 100%;          /* Scale down smoothly on mobile */
-    max-width: 1000px;     /* Cap max width on desktop */
-    padding: 0 16px;      /* Prevents charts touching screen edges on mobile */
-    box-sizing: border-box;
-    align-items: center;
-}
-
-.cpu_chart_container,
-.ram_chart_container,
-.disk_and_net_charts_container {
-    display: flex;
-    flex-direction: row;
-
-    width: 100%;
-    position: relative;   /* REQUIRED for Chart.js canvas sizing */
-    height: 280px;        /* Height on mobile screens */
-    margin-bottom: 24px;
-}
-
-.net_chart_container {
-    width: 50%;
-    height: 100%
-}
-.disk_chart_container {
-    width: 50%;
-    height: 100%
-}
-
-.uptime_display {
-    font-size: 24px;
-}
-
-.uptime_display strong {
-    color: var(--uptime-color)
-}
-
-/* Scale height up for tablets and desktops */
-@media (min-width: 768px) {
-    .cpu_chart_container,
-    .ram_chart_container,
-    .disk_and_net_charts_container {
-        height: 450px;    /* Larger height on PC */
-    }
 }

@@ -20,3 +20,7 @@ function getCookie(cname) {
     }
     return "";
 }
+
+if (!(window.location.pathname === "/login" || window.location.pathname === "/status") && getCookie("token") == "") {
+    window.location = "/login"
+}

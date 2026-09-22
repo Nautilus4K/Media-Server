@@ -471,7 +471,7 @@ function formatSeconds(totalSeconds) {
 
 async function updateUptime() {
     document.getElementById("uptime").textContent = formatSeconds(Math.floor(Date.now() / 1000) - boottime);
-    setTimeout(updateUptime, 1000);z
+    setTimeout(updateUptime, 1000);
 }
 
 // Start

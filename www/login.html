@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login to management panel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/login.css">
+        <link rel="icon" href="/favicon.svg">
+
+        <script src="/src/general.js"></script>
+        <script src="/src/login.js"></script>
+    </head>
+    <body>
+        <div id="req_stat" class="req_stat">
+            <p>Version {{ version }}</p>
+            <p>IP: {{ ip_addr }}</p>
+            <p>User Agent: {{ user_agent }}</p>
+        </div>
+
+        <div id="login_pane" class="login_pane">
+            <img src="/favicon.svg">
+            <h1>{{ server_name }}</h1>
+
+            <div id="login_fields_container" class="login_fields_container">
+                <input alt="Username" placeholder="Username", type="text" id="username_input" enterkeyhint="next">
+                <input alt="Password" placeholder="Password" type="password" id="password_input" enterkeyhint="go">
+                <p id="error_alert" class="error_alert">Alert</p>
+                <button onclick="login()">Login</button>
+            </div>
+        </div>
+    </body>
+</html>

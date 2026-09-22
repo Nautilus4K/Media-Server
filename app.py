@@ -1,15 +1,21 @@
-from flask import Flask, send_file, abort, Response
+from flask import Flask, send_file, abort, Response, request, render_template_string
 import os
 import time
 import psutil
 import json
 import threading
+import bcrypt
+import secrets
 
 from collections import deque
 
 # Monitoring settings
 MAX_SECONDS = 1800 # 30 minutes
 SECONDS_INBETWEEN = 10 # 10 seconds apart between updates
+
+# Other settings
+VERSION = '26.9.21'
+NAME = 'AETERNA'
 
 # Monitoring preparations variables
 memory = psutil.virtual_memory()
@@ -80,7 +86,9 @@ def stop_monitoring():
 app = Flask(__name__)
 
 dirPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/") + "/www/"
+sysPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
+# WSGI routing
 @app.route("/")
 def home():
     return open(dirPath + "index.html", "r", encoding='utf-8').read(), 200
@@ -105,6 +113,75 @@ def get_status():
 
     return Response(json.dumps(form), mimetype="application/json"), 200
 
+
+# Logging in
+@app.route("/login")
+def login_page():
+    return render_template_string(
+        open(dirPath + "login.html", "r", encoding='utf-8').read(), 
+        version=VERSION, ip_addr=request.remote_addr, user_agent=request.user_agent.string,
+        server_name=NAME
+    ), 200
+
+# For login requests
+login_rate_limiter = {}
+RATE_LIMIT_SECONDS = 30 # 30 seconds after over rate limit
+RATE_LIMIT_REPEATS = 3
+
+session_tokens = {}
+
+@app.route("/login-auth")
+def login_authorization():
+    if request.remote_addr in login_rate_limiter:
+        if time.time() - login_rate_limiter[request.remote_addr]["time"] > RATE_LIMIT_SECONDS:
+            login_rate_limiter[request.remote_addr] = {
+                "time": time.time(),
+                "repeats": 1
+            }
+        else:
+            # Smaller or equal to rate limit seconds
+            login_rate_limiter[request.remote_addr]["repeats"] += 1
+
+            if login_rate_limiter[request.remote_addr]["repeats"] > 3:
+                return('{"success": false, "message": "Rate limited."}')
+    else:
+        login_rate_limiter[request.remote_addr] = {
+            "time": time.time(),
+            "repeats": 1
+        }
+
+    users = json.load(open(sysPath + "/users.json", "r", encoding='utf-8'))
+
+    username = request.headers.get("Username")
+    password = request.headers.get("Password")
+
+    response_payload = {
+        "success": False,
+        "message": ""
+    }
+
+    if not password or not username or not username in users:
+        response_payload["success"] = False
+        # Stringing along the user. Either they got it both right or not
+        # Keep it abstract. Keep them guessin
+        response_payload["message"] = "Wrong username or password."
+    else:
+        # IT DOES EXISTS!111!!!!11!
+        target_user_hashed_passwd = str(users[username]["passwd"]).encode('utf-8')
+        if bcrypt.checkpw(password.encode('utf-8'), target_user_hashed_passwd):
+            new_token = secrets.token_hex(16)
+
+            session_tokens[new_token] = username
+
+            response_payload["success"] = True
+            response_payload["message"] = new_token
+        else:
+            response_payload["success"] = False
+            response_payload["message"] = "Wrong username or password."
+
+    return Response(json.dumps(response_payload), mimetype="application/json"), 200
+
+# Normal file handling
 @app.route("/<path:filename>")
 def getfile(filename: str):
     if not filename.endswith(".html"):
