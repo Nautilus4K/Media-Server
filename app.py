@@ -12,6 +12,7 @@ from collections import deque
 # Monitoring settings
 MAX_SECONDS = 1800 # 30 minutes
 SECONDS_INBETWEEN = 10 # 10 seconds apart between updates
+HISTORY_LEN = int(MAX_SECONDS / SECONDS_INBETWEEN)
 
 # Other settings
 VERSION = '26.9.21'
@@ -20,22 +21,50 @@ NAME = 'AETERNA'
 # Monitoring preparations variables
 memory = psutil.virtual_memory()
 
-# Monitoring functionality
-cpu_mon_history  : deque[float] = deque(maxlen = int(MAX_SECONDS / SECONDS_INBETWEEN))
-ram_mon_history  : deque[float] = deque(maxlen = int(MAX_SECONDS / SECONDS_INBETWEEN))
-# disk_mon_history : deque[float] = deque(maxlen = int(MAX_SECONDS / SECONDS_INBETWEEN))
-net_up_mon_history  : deque[float] = deque(maxlen = int(MAX_SECONDS / SECONDS_INBETWEEN))
-net_down_mon_history  : deque[float] = deque(maxlen = int(MAX_SECONDS / SECONDS_INBETWEEN))
+# ----------------------------------------------------------------------------
+# Monitoring functionality (live deques, capped to HISTORY_LEN samples)
+# ----------------------------------------------------------------------------
+
+# CPU: total (non-idle), user time %, system time %
+cpu_total_mon_history   : deque[float] = deque(maxlen=HISTORY_LEN)
+cpu_user_mon_history    : deque[float] = deque(maxlen=HISTORY_LEN)
+cpu_system_mon_history  : deque[float] = deque(maxlen=HISTORY_LEN)
+
+# Memory: used / buffers / cached / free, all in GiB
+ram_used_mon_history    : deque[float] = deque(maxlen=HISTORY_LEN)
+ram_buffers_mon_history : deque[float] = deque(maxlen=HISTORY_LEN)
+ram_cached_mon_history  : deque[float] = deque(maxlen=HISTORY_LEN)
+ram_free_mon_history    : deque[float] = deque(maxlen=HISTORY_LEN)
+
+# Network: up / down, in Mbps (unchanged behaviour)
+net_up_mon_history      : deque[float] = deque(maxlen=HISTORY_LEN)
+net_down_mon_history    : deque[float] = deque(maxlen=HISTORY_LEN)
+
+# Disk I/O: read / write throughput, in MB/s
+disk_read_mon_history   : deque[float] = deque(maxlen=HISTORY_LEN)
+disk_write_mon_history  : deque[float] = deque(maxlen=HISTORY_LEN)
+
 ram_total        = float(memory.total) / (1024 ** 3)
-disk_mon         = 0.0
+disk_mon         = 0.0   # disk *space* used, in GB (decimal) - unrelated to disk I/O
 disk_total       = float(psutil.disk_usage("/").total) / (1000 ** 3)
 boot_time        = int(psutil.boot_time())
 
-# Monitoring functionality history in list (cached so that converting wont have to happen again)
-cpu_mon_history_list: list[float] = []
-ram_mon_history_list: list[float] = []
-net_up_history_list: list[float] = []
-net_down_history_list: list[float] = []
+# Cached "as list" versions of the above (so the JSON route doesn't have to
+# convert a deque -> list on every request)
+cpu_total_history_list  : list[float] = []
+cpu_user_history_list   : list[float] = []
+cpu_system_history_list : list[float] = []
+
+ram_used_history_list    : list[float] = []
+ram_buffers_history_list : list[float] = []
+ram_cached_history_list  : list[float] = []
+ram_free_history_list    : list[float] = []
+
+net_up_history_list   : list[float] = []
+net_down_history_list : list[float] = []
+
+disk_read_history_list  : list[float] = []
+disk_write_history_list : list[float] = []
 
 _stop_event = threading.Event()
 
@@ -43,10 +72,20 @@ net = psutil.net_io_counters()
 old_bytes_sent = net.bytes_sent
 old_bytes_recv = net.bytes_recv
 
-def start_monitoring():
-    global old_bytes_recv, old_bytes_sent, disk_mon, cpu_mon_history_list, ram_mon_history_list, net_up_history_list, net_down_history_list
+_disk_io = psutil.disk_io_counters()
+old_bytes_read    = _disk_io.read_bytes  if _disk_io else 0
+old_bytes_written = _disk_io.write_bytes if _disk_io else 0
 
-    psutil.cpu_percent(interval=None)  # discard meaningless first reading
+
+def start_monitoring():
+    global old_bytes_recv, old_bytes_sent, old_bytes_read, old_bytes_written, disk_mon
+    global cpu_total_history_list, cpu_user_history_list, cpu_system_history_list
+    global ram_used_history_list, ram_buffers_history_list, ram_cached_history_list, ram_free_history_list
+    global net_up_history_list, net_down_history_list
+    global disk_read_history_list, disk_write_history_list
+
+    psutil.cpu_percent(interval=None)        # discard meaningless first reading
+    psutil.cpu_times_percent(interval=None)  # discard meaningless first reading
     next_tick = time.monotonic() + SECONDS_INBETWEEN
     while True:
         remaining = next_tick - time.monotonic()
@@ -57,13 +96,38 @@ def start_monitoring():
         if _stop_event.is_set():
             break
 
-        memory = psutil.virtual_memory()
-        net = psutil.net_io_counters()
+        # ---- CPU: total / user / system -----------------------------------
+        cpu_total = psutil.cpu_percent(interval=None)
+        cpu_times = psutil.cpu_times_percent(interval=None)
+        cpu_total_mon_history.append(cpu_total)
+        cpu_user_mon_history.append(cpu_times.user)
+        cpu_system_mon_history.append(cpu_times.system)
 
-        cpu_mon_history.append(psutil.cpu_percent(interval=None))
-        ram_mon_history.append(float(memory.used) / (1024 ** 3))
-        # disk_mon_history.append(float(psutil.disk_usage("/").used) / (1000 ** 3))
+        # ---- Memory: used / buffers / cached / free ------------------------
+        mem = psutil.virtual_memory()
+        ram_used_mon_history.append(float(mem.used) / (1024 ** 3))
+        # buffers/cached are Linux-only fields on psutil; fall back to 0 elsewhere
+        ram_buffers_mon_history.append(float(getattr(mem, "buffers", 0)) / (1024 ** 3))
+        ram_cached_mon_history.append(float(getattr(mem, "cached", 0)) / (1024 ** 3))
+        ram_free_mon_history.append(float(mem.free) / (1024 ** 3))
+
+        # ---- Disk: space used (GB) + I/O throughput (MB/s) ------------------
         disk_mon = float(psutil.disk_usage("/").used) / (1000 ** 3)
+
+        disk_io = psutil.disk_io_counters()
+        if disk_io:
+            bytes_read = disk_io.read_bytes
+            bytes_written = disk_io.write_bytes
+            disk_read_mon_history.append(float(bytes_read - old_bytes_read) / (1024 ** 2) / SECONDS_INBETWEEN)
+            disk_write_mon_history.append(float(bytes_written - old_bytes_written) / (1024 ** 2) / SECONDS_INBETWEEN)
+            old_bytes_read = bytes_read
+            old_bytes_written = bytes_written
+        else:
+            disk_read_mon_history.append(0.0)
+            disk_write_mon_history.append(0.0)
+
+        # ---- Network: up / down (Mbps) --------------------------------------
+        net = psutil.net_io_counters()
         bytes_sent = net.bytes_sent
         bytes_recv = net.bytes_recv
 
@@ -72,10 +136,21 @@ def start_monitoring():
         old_bytes_sent = bytes_sent
         old_bytes_recv = bytes_recv
 
-        cpu_mon_history_list = [*cpu_mon_history]
-        ram_mon_history_list = [*ram_mon_history]
-        net_up_history_list = [*net_up_mon_history]
+        # ---- snapshot deques into plain lists for the JSON route ------------
+        cpu_total_history_list  = [*cpu_total_mon_history]
+        cpu_user_history_list   = [*cpu_user_mon_history]
+        cpu_system_history_list = [*cpu_system_mon_history]
+
+        ram_used_history_list    = [*ram_used_mon_history]
+        ram_buffers_history_list = [*ram_buffers_mon_history]
+        ram_cached_history_list  = [*ram_cached_mon_history]
+        ram_free_history_list    = [*ram_free_mon_history]
+
+        net_up_history_list   = [*net_up_mon_history]
         net_down_history_list = [*net_down_mon_history]
+
+        disk_read_history_list  = [*disk_read_mon_history]
+        disk_write_history_list = [*disk_write_mon_history]
 
         next_tick += SECONDS_INBETWEEN  # absolute schedule, no cumulative drift
 
@@ -101,13 +176,24 @@ def status():
 def get_status():
     # Function to get latest status in JSON form
     form = {
-        "cpu": cpu_mon_history_list,
-        "ram": ram_mon_history_list,
+        "cpu_total": cpu_total_history_list,
+        "cpu_user": cpu_user_history_list,
+        "cpu_system": cpu_system_history_list,
+
+        "ram_used": ram_used_history_list,
+        "ram_buffers": ram_buffers_history_list,
+        "ram_cached": ram_cached_history_list,
+        "ram_free": ram_free_history_list,
         "total_ram": ram_total,
+
         "disk": disk_mon,
         "disk_total": disk_total,
+        "disk_read": disk_read_history_list,
+        "disk_write": disk_write_history_list,
+
         "net_up": net_up_history_list,
         "net_down": net_down_history_list,
+
         "boot": boot_time
     }
 

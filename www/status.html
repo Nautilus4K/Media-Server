@@ -6,7 +6,6 @@
         <link rel="stylesheet" href="/css/style.css">
         <link rel="stylesheet" href="/css/status.css">
         <link rel="icon" href="/favicon.svg">
-        
         <script src="/src/general.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/src/status.js" defer></script>
@@ -18,14 +17,18 @@
         <p id="uptime_display" class="uptime_display">Uptime: <strong id="uptime">XX:XX:XX</strong></p>
 
         <div id="mon_display" class="mon_display">
-            <div class="cpu_chart_container"><canvas id="cpu_chart"></canvas></div>
 
-            <div class="ram_chart_container"><canvas id="ram_chart"></canvas></div>
+        <div class="chart_container cpu_chart_container"><canvas id="cpu_chart"></canvas></div>
 
-            <div class="disk_and_net_charts_container">
-                <div class="net_chart_container"><canvas id="net_chart"></canvas></div>
-                <div class="disk_chart_container"><canvas id="disk_chart"></canvas></div>
-            </div>
+        <div class="chart_container ram_chart_container"><canvas id="ram_chart"></canvas></div>
+
+        <div class="chart_row">
+            <div class="chart_container half_chart net_chart_container"><canvas id="net_chart"></canvas></div>
+            <div class="chart_container half_chart diskio_chart_container"><canvas id="diskio_chart"></canvas></div>
+        </div>
+
+        <div class="chart_container disk_space_chart_container"><canvas id="disk_chart"></canvas></div>
+
         </div>
     </body>
 </html>

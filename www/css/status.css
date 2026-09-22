@@ -18,25 +18,37 @@
     align-items: center;
 }
 
-.cpu_chart_container,
-.ram_chart_container,
-.disk_and_net_charts_container {
+/* Shared box every canvas sits inside of. Chart.js needs a positioned
+   parent with an explicit height to size the canvas correctly. */
+.chart_container {
+    position: relative;   /* REQUIRED for Chart.js canvas sizing */
+    width: 100%;
+    height: 280px;         /* Height on mobile screens */
+    margin-bottom: 24px;
+    background: var(--background);
+    /* border: 1px solid var(--border-color); */
+    /* border-radius: 4px; */
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+/* Network + Disk I/O sit side by side, sharing the synced crosshair */
+.chart_row {
     display: flex;
     flex-direction: row;
-
+    flex-wrap: wrap;
     width: 100%;
-    position: relative;   /* REQUIRED for Chart.js canvas sizing */
-    height: 280px;        /* Height on mobile screens */
+    gap: 16px;
+}
+
+.chart_row .half_chart {
+    flex: 1 1 260px;
     margin-bottom: 24px;
 }
 
-.net_chart_container {
-    width: 50%;
-    height: 100%
-}
-.disk_chart_container {
-    width: 50%;
-    height: 100%
+.disk_space_chart_container {
+    max-width: 420px;
+    height: 260px;
 }
 
 .uptime_display {
@@ -51,7 +63,11 @@
 @media (min-width: 768px) {
     .cpu_chart_container,
     .ram_chart_container,
-    .disk_and_net_charts_container {
-        height: 450px;    /* Larger height on PC */
+    .chart_row .half_chart {
+        height: 340px;    /* Larger height on PC */
+    }
+
+    .disk_space_chart_container {
+        height: 320px;
     }
 }

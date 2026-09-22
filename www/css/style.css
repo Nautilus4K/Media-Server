@@ -9,7 +9,6 @@
     --disk-used-color: #ffd900;
     --disk-free-color: #777777;
 } */
-
 :root {
     --text-color: #fff; /* Use white text color for dark mode */
     --background: #0a0a0a;
@@ -17,14 +16,33 @@
     --primary-color: #333;
     --fail-color: #ff2222;
 
-    /* The status colors */
-    --cpu-color: #319bff;
-    --ram-color: #c531ff;
-    --net-down-color: #53c44f;
-    --net-up-color: #ff9c40;
+    /* Chart panel chrome (new — used by the redesigned status charts) */
+    --chart-background: #141414;
+    --chart-border-color: #262626;
+    --crosshair-color: #999999;
+
+    /* CPU — blues (Total / User / System), matching the CanvasJS reference */
+    --cpu-total-color: #1976d2;
+    --cpu-user-color: #64b5f6;
+    --cpu-system-color: #2196f3;
+
+    /* Memory — reds (Used / Buffers / Cached / Free) */
+    --ram-used-color: #d32f2f;
+    --ram-buffers-color: #f44336;
+    --ram-cached-color: #e57373;
+    --ram-free-color: #8d8d8d;
+
+    /* Network — greens (Down / Up), same metrics as before, recolored */
+    --net-down-color: #388e3c;
+    --net-up-color: #81c784;
     --net-neutral-color: #777777;
-    --disk-used-color: #ffd900;
-    --disk-free-color: #777777;
+
+    /* Disk — oranges, shared by the I/O chart (Write / Read) and the space pie */
+    --disk-write-color: #ffb74d;
+    --disk-read-color: #f57c00;
+    --disk-used-color: #f57c00;
+    --disk-free-color: #616161;
+
     --uptime-color: #ffea2d;
 }
 
