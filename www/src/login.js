@@ -20,7 +20,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-if (getCookie("token") != "") window.location = "/"
+if (getCookie("token") != "") {
+    fetch('/check-auth', {
+        headers: {
+            "Token": getCookie("token")
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data)
+        if (!data) {
+            // FAILURE
+            // YESSIR
+            // right now theres no token like this, so YESSIR
+            setCookie("token", "", 0);
+        } else {
+            window.location = "/";
+        }
+    }).catch(error => {
+        console.error(error);
+    })
+}
 
 function login() {
     var username = document.getElementById("username_input").value;

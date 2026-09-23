@@ -11,7 +11,7 @@ import getpass
 # import subprocess
 
 parser = argparse.ArgumentParser(prog="Media-Server")
-parser.add_argument("-v", "--verbose", action="store_true", help="Console verbose loggings")
+# parser.add_argument("-v", "--verbose", action="store_true", help="Console verbose loggings")
 parser.add_argument("-t", "--threads", type=int, help="Thread count for this server")
 parser.add_argument("-a", "--address", action="store", type=str, help="Address to host the website. Default 127.0.0.1")
 parser.add_argument("-p", "--port", action="store", type=int, help="Port to host the website. Default 8000")
@@ -26,7 +26,7 @@ USERSEDITMODE = args.users
 
 sysPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
-console = ConsoleLogger(args.verbose)
+console = ConsoleLogger(True)
 if __name__ == "__main__":
     print(f"Media-Server version {VERSION}")
 

@@ -1,20 +1,15 @@
-/* :root {
-    --text-color: #000;
-    --background: #fff;
-    --cpu-color: #319bff;
-    --ram-color: #c531ff;
-    --net-down-color: #07df00;
-    --net-up-color: #ff7b00;
-    --net-neutral-color: #777777;
-    --disk-used-color: #ffd900;
-    --disk-free-color: #777777;
-} */
+@import "https://www.nerdfonts.com/assets/css/webfont.css";
+
 :root {
     --text-color: #fff; /* Use white text color for dark mode */
     --background: #0a0a0a;
     --border-color: #777;
-    --primary-color: #333;
+    --primary-color: #2d2d2d;
     --fail-color: #ff2222;
+
+    --ease_custom: cubic-bezier(.09,.53,.29,.96);
+    --font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+    /* --nf-family: 'NerdFont', sans-serif; */
 
     /* Chart panel chrome (new — used by the redesigned status charts) */
     --chart-background: #141414;
@@ -53,8 +48,151 @@ html, body {
     align-items: center;
     color: var(--text-color);
     background-color: var(--background);
-    font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-family: var(--font-family);
     margin: 0;
     padding: 0;
     width: 100%;
+}
+
+@keyframes topbarEntryAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(-70px); /* Starts 20px lower */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);    /* Moves to its natural position */
+  }
+}
+
+.topbar {
+    display: flex;
+    flex-direction: row;
+
+    width: calc(100vw - 45px);
+    border-bottom: 1px solid var(--border-color);
+    height: 70px;
+
+    align-items: center;
+    /* padding: 0 20px; */
+    padding-left: 15px;
+    padding-right: 30px;
+
+    gap: 15px;
+
+    animation: topbarEntryAnim 0.5s var(--ease_custom) forwards;
+}
+
+.topbar img {
+    height: 50px;
+}
+
+.topbar .title {
+    font-size: 18px;
+}
+
+.divider {
+    flex: 1
+}
+
+.username {
+    position: relative;
+}
+
+.username button {
+    font-family: var(--font-family);
+    background-color: transparent;
+    border: 0;
+
+    color: var(--text-color);
+    font-size: 18px;
+}
+
+.username button:hover {
+    cursor: pointer;
+}
+
+.usermenu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+
+    width: 200px;
+    /* height: 200px; */
+
+    border: 1px solid var(--border-color);
+
+    top: 80px;
+    right: 20px;
+
+    transform: translateY(0), translateX(0);
+
+    transition: 0.2s var(--ease_custom);
+
+    overflow: hidden;
+}
+
+.usermenu.hidden {
+    transform: translateY(-50px) translateX(20px);
+
+    opacity: 0;
+    visibility: hidden;
+}
+
+.usermenu button,
+.usermenu a {
+    font-family: var(--font-family);
+    width: calc(100% + 30px);
+    font-size: 15px;
+    background-color: transparent;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: var(--text-color);
+
+    margin-left: -30px;
+
+    align-items: center;
+
+    border: 0;
+    height: 40px;
+
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+    text-decoration: none;
+
+    transition: .25s var(--ease_custom);
+}
+
+.usermenu button .indicator,
+.usermenu a .indicator {
+    padding-right: 10px;
+    opacity: 0;
+
+    transition: .25s;
+}
+
+.usermenu button p,
+.usermenu a p {
+    margin: 0;
+}
+
+.usermenu button:hover,
+.usermenu a:hover {
+    width: 100%;
+    margin-left: 0;
+
+    cursor: pointer;
+
+    background-color: var(--primary-color);
+}
+
+.usermenu button:hover .indicator,
+.usermenu a:hover .indicator {
+    opacity: 1;
+}
+
+.usermenu button .icon,
+.usermenu a .icon {
+    font-size: 18px;
 }

@@ -1,4 +1,6 @@
-from flask import Flask, send_file, abort, Response, request, render_template_string
+from flask import Flask, send_file, abort, Response, request, render_template_string, redirect, url_for
+from werkzeug.datastructures import Headers
+# from http.cookies import SimpleCookie
 import os
 import time
 import psutil
@@ -8,6 +10,8 @@ import bcrypt
 import secrets
 
 from collections import deque
+from logger import ConsoleLogger
+console = ConsoleLogger(True)
 
 # Monitoring settings
 MAX_SECONDS = 1800 # 30 minutes
@@ -163,10 +167,52 @@ app = Flask(__name__)
 dirPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/") + "/www/"
 sysPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
+# Login token special checkers
+session_tokens = {}
+
+def parse_cookies(cookie_str : str) -> dict:
+    cookie_dict = {
+        item.split("=")[0].strip(): item.split("=")[1].strip()
+        for item in cookie_str.split(";")
+        if "=" in item
+    }
+
+    return cookie_dict
+
+
+def check_token(headers: Headers) -> bool:
+    cookies_str = headers.get("Cookie")
+
+    if not cookies_str: return False
+
+    token = parse_cookies(cookies_str)["token"]
+
+    return token in session_tokens
+
+def get_user(headers: Headers) -> str | None:
+    cookies_str = headers.get("Cookie")
+    if not cookies_str: return None
+
+    token = parse_cookies(cookies_str)["token"]
+
+    if not token in session_tokens: return ""
+    else: return session_tokens[token]
+
+def serve_generic_site(path: str, headers: Headers):
+    if (check_token(headers)):
+        # OK
+        return render_template_string(
+            open(path, "r", encoding='utf-8').read(),
+            server_name=NAME, user_name=get_user(headers)
+        ), 200
+    else:
+        return redirect(url_for('login_page'))
+
 # WSGI routing
 @app.route("/")
 def home():
-    return open(dirPath + "index.html", "r", encoding='utf-8').read(), 200
+    # print(request.headers)
+    return serve_generic_site(dirPath + "index.html", request.headers)
 
 @app.route("/status")
 def status():
@@ -214,7 +260,9 @@ login_rate_limiter = {}
 RATE_LIMIT_SECONDS = 30 # 30 seconds after over rate limit
 RATE_LIMIT_REPEATS = 3
 
-session_tokens = {}
+@app.route("/check-auth")
+def login_token_checker():
+    return json.dumps(request.headers.get("Token") in session_tokens), 200
 
 @app.route("/login-auth")
 def login_authorization():
@@ -261,11 +309,24 @@ def login_authorization():
 
             response_payload["success"] = True
             response_payload["message"] = new_token
+
+            # print("New login")
+            console.log(f"New login: {request.remote_addr}: {username}/{new_token}")
         else:
             response_payload["success"] = False
             response_payload["message"] = "Wrong username or password."
 
     return Response(json.dumps(response_payload), mimetype="application/json"), 200
+
+@app.route("/logout")
+def login_remove_token():
+    cookies_str = request.headers.get("Cookie")
+    if cookies_str:
+        token = parse_cookies(cookies_str)["token"]
+
+        if token in session_tokens: del session_tokens[token]
+
+    return redirect(url_for('login_page'))
 
 # Normal file handling
 @app.route("/<path:filename>")

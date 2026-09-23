@@ -22,5 +22,32 @@ function getCookie(cname) {
 }
 
 if (!(window.location.pathname === "/login" || window.location.pathname === "/status") && getCookie("token") == "") {
-    window.location = "/login"
+    window.location = "/login";
 }
+
+var usermenu_on = false;
+function usermenu() {
+    const usermenu_div = document.getElementById("usermenu")
+
+    if (!usermenu_on) {
+        // console.log("Open menu")
+        // Open usermenu
+        usermenu_on = true
+        usermenu_div.classList.remove("hidden");
+    } else {
+        // console.log("Close menu")
+        // Close usermenu
+        usermenu_on = false;
+        usermenu_div.classList.add("hidden");
+    }
+}
+
+document.addEventListener("click", (event) => {
+    const clicked_id = event.target.id;
+
+    if (clicked_id != "username" && clicked_id != "username_btn" && clicked_id != "usermenu") {
+        if (usermenu_on) {
+            usermenu();
+        }
+    }
+});

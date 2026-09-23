@@ -7,8 +7,29 @@
         <link rel="icon" href="/favicon.svg">
 
         <script src="/src/general.js"></script>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=logout" />
     </head>
     <body>
-        
+        <div class="topbar">
+            <a href="https://github.com/Nautilus4K/Media-Server"><img src="/favicon.svg"></a>
+            <p class="title"><strong>{{ server_name }}</strong></p>
+
+            <div class="divider"></div>
+
+            <p class="username" id="username">
+                <button onclick="usermenu()" id="username_btn">{{ user_name }}</button>
+                <div id="usermenu" class="usermenu hidden">
+                    <a href="/logout">
+                        <span class="indicator">>></span>
+                        <p>Log out</p>
+                        <div class="divider"></div>
+                        <span class="nf nf-md-logout_variant_2"></span>
+                    </a>
+                </div>
+            </p>
+        </div>
+
+        <div class="sidebar"></div>
     </body>
 </html>
