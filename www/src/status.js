@@ -43,10 +43,57 @@ const syncedCrosshairPlugin = {
 };
 Chart.register(syncedCrosshairPlugin);
 
+const DIRECTION_LOCK_PX = 10; // how far a touch must move before we decide horizontal vs vertical
+
 function registerSync(chart) {
     syncGroup.push(chart);
     chart.canvas.addEventListener("mousemove", (evt) => onSyncMove(chart, evt));
     chart.canvas.addEventListener("mouseleave", onSyncLeave);
+
+    // Per-gesture state: where the touch started, and which direction (if any)
+    // it's been locked to. Kept in closure so each chart's canvas tracks its
+    // own finger independently.
+    let touchStart = null;
+    let touchLocked = null; // null = undecided, "x" = chart scrub, "y" = page scroll
+
+    chart.canvas.addEventListener("touchstart", (evt) => {
+        const touch = evt.touches[0];
+        if (!touch) return;
+        touchStart = { x: touch.clientX, y: touch.clientY };
+        touchLocked = null;
+        // A tap (no movement yet) can't conflict with scrolling, so give
+        // immediate feedback without ever touching preventDefault.
+        onSyncMove(chart, evt);
+    }, { passive: true });
+
+    chart.canvas.addEventListener("touchmove", (evt) => {
+        const touch = evt.touches[0];
+        if (!touch || !touchStart) return;
+
+        if (touchLocked === null) {
+            const dx = touch.clientX - touchStart.x;
+            const dy = touch.clientY - touchStart.y;
+            if (Math.abs(dx) < DIRECTION_LOCK_PX && Math.abs(dy) < DIRECTION_LOCK_PX) {
+                return; // not enough movement yet to know what the user's doing
+            }
+            touchLocked = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+            // Crucially: we haven't called preventDefault on any event up to
+            // this point, so if this turns out to be "y", the browser's
+            // native scroll for this gesture is still fully intact.
+        }
+
+        if (touchLocked === "y") return; // vertical swipe - let the page scroll, don't scrub
+
+        onSyncMove(chart, evt);
+    }, { passive: false });
+
+    const endTouch = () => {
+        touchStart = null;
+        touchLocked = null;
+        onSyncLeave();
+    };
+    chart.canvas.addEventListener("touchend", endTouch);
+    chart.canvas.addEventListener("touchcancel", endTouch);
 }
 
 // A fast mouse can fire many mousemove events per animation frame. Without
@@ -59,6 +106,10 @@ let syncRafId = null;
 let pendingSync = null;
 
 function onSyncMove(sourceChart, evt) {
+    // Only claim the gesture (block scroll) once we're actually scrubbing via
+    // touchmove — never on touchstart (a tap doesn't scroll anything anyway).
+    if (evt.type === "touchmove") evt.preventDefault();
+
     pendingSync = { sourceChart, evt };
     if (syncRafId !== null) return;
     syncRafId = requestAnimationFrame(() => {
@@ -67,10 +118,23 @@ function onSyncMove(sourceChart, evt) {
     });
 }
 
+// TouchEvent has no offsetX/offsetY, so derive the same thing from
+// clientX/clientY relative to the canvas's bounding box.
+function getEventOffset(canvas, evt) {
+    const touch = evt.touches && evt.touches[0];
+    if (!touch) return { x: evt.offsetX, y: evt.offsetY };
+    const rect = canvas.getBoundingClientRect();
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
 function applySyncMove(sourceChart, evt) {
+    // Chart.js's own hit-testing already understands raw TouchEvents (it
+    // reads evt.touches internally), so this line needs no changes.
     const points = sourceChart.getElementsAtEventForMode(evt, "index", { intersect: false }, false);
     if (!points.length) return;
     syncedIndex = points[0].index;
+
+    const { x, y } = getEventOffset(sourceChart.canvas, evt);
 
     syncGroup.forEach((chart) => {
         if (chart === sourceChart) {
@@ -78,7 +142,7 @@ function applySyncMove(sourceChart, evt) {
             return;
         }
         const active = chart.data.datasets.map((_, datasetIndex) => ({ datasetIndex, index: syncedIndex }));
-        chart.tooltip.setActiveElements(active, { x: evt.offsetX, y: evt.offsetY });
+        chart.tooltip.setActiveElements(active, { x, y });
         chart.update("none");
     });
 }
