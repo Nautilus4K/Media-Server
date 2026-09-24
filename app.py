@@ -22,6 +22,9 @@ HISTORY_LEN = int(MAX_SECONDS / SECONDS_INBETWEEN)
 VERSION = '26.9.21'
 NAME = 'AETERNA'
 
+# HTML/CSS classes depending on sites
+# SELECTED_CLASSNAME = "selected"
+
 # Monitoring preparations variables
 memory = psutil.virtual_memory()
 
@@ -198,9 +201,29 @@ def get_user(headers: Headers) -> str | None:
     if not token in session_tokens: return ""
     else: return session_tokens[token]
 
+# Selected highlights
+# DASHBOARD_SELECTED = 0x2FFF
+# FILES_SELECTED = 0x3FFF
+# MINECRAFT_SELECTED = 0x4FFF
 def serve_generic_site(path: str, headers: Headers):
     if (check_token(headers)):
         # OK
+        # if selected_highlight == DASHBOARD_SELECTED:
+        #     return render_template_string(
+        #         open(path, "r", encoding='utf-8').read(),
+        #         server_name=NAME, user_name=get_user(headers), dashboard_selected=SELECTED_CLASSNAME
+        #     ), 200
+        # elif selected_highlight == FILES_SELECTED:
+        #     return render_template_string(
+        #         open(path, "r", encoding='utf-8').read(),
+        #         server_name=NAME, user_name=get_user(headers), files_selected=SELECTED_CLASSNAME
+        #     ), 200
+        # elif selected_highlight == MINECRAFT_SELECTED:
+        #     return render_template_string(
+        #         open(path, "r", encoding='utf-8').read(),
+        #         server_name=NAME, user_name=get_user(headers), minecraft_selected=SELECTED_CLASSNAME
+        #     ), 200
+        # else:
         return render_template_string(
             open(path, "r", encoding='utf-8').read(),
             server_name=NAME, user_name=get_user(headers)

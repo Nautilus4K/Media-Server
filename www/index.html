@@ -1,3 +1,4 @@
+<!-- DASHBOARD -->
 <!DOCTYPE html>
 <html>
     <head>
@@ -12,7 +13,7 @@
     </head>
     <body>
         <div class="topbar">
-            <a href="https://github.com/Nautilus4K/Media-Server"><img src="/favicon.svg"></a>
+            <button onclick="faviconClicked()" id="favicon"><img src="/favicon.svg" id="favicon_img"></button>
             <p class="title"><strong>{{ server_name }}</strong></p>
 
             <div class="divider"></div>
@@ -20,7 +21,7 @@
             <p class="username" id="username">
                 <button onclick="usermenu()" id="username_btn">{{ user_name }}</button>
                 <div id="usermenu" class="usermenu hidden">
-                    <a href="/logout">
+                    <a href="/logout" class="logout_btn">
                         <span class="indicator">>></span>
                         <p>Log out</p>
                         <div class="divider"></div>
@@ -30,6 +31,16 @@
             </p>
         </div>
 
-        <div class="sidebar"></div>
+        <div class="viewport">
+            <div class="sidebar" id="sidebar">
+                <a class="selected" href="/"><div></div> <span class="nf nf-md-view_dashboard_outline icon"></span> Dashboard</a>
+                <a class=""><div></div><span class="nf nf-md-folder_outline icon"></span> Files</a>
+                <a class=""><div></div><span class="nf nf-md-minecraft icon"></span> Minecraft</a>
+            </div>
+
+            <div class="view">
+                <iframe src="/status"></iframe>
+            </div>
+        </div>
     </body>
 </html>

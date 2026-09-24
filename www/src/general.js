@@ -43,11 +43,37 @@ function usermenu() {
 }
 
 document.addEventListener("click", (event) => {
-    const clicked_id = event.target.id;
+    // const clicked_id = event.target.id;
+    // console.log("Clicked")
 
-    if (clicked_id != "username" && clicked_id != "username_btn" && clicked_id != "usermenu") {
+    if (!event.target.closest("#username, #username_btn, #usermenu")) {
         if (usermenu_on) {
             usermenu();
         }
+    } 
+
+    if (!event.target.closest("#sidebar, #favicon, #favicon_img")) {
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar && sidebar.classList.contains("open")) {
+            toggleSidebar();
+        }
     }
 });
+
+function faviconClicked() {
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    // console.log(`Viewport width: ${viewportWidth}px`);
+
+    if (mediaQuery.matches) {
+        // 1366x768 ig? This is a desktop
+        window.location = "https://github.com/Nautilus4K/Media-Server"
+    } else {
+        // Not a desktop
+        toggleSidebar()
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    sidebar.classList.toggle("open")
+}

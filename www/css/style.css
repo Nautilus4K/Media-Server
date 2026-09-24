@@ -6,6 +6,7 @@
     --border-color: #777;
     --primary-color: #2d2d2d;
     --fail-color: #ff2222;
+    --logout-color: #ff4f4f;
 
     --ease_custom: cubic-bezier(.09,.53,.29,.96);
     --font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
@@ -54,17 +55,6 @@ html, body {
     width: 100%;
 }
 
-@keyframes topbarEntryAnim {
-  0% {
-    opacity: 0;
-    transform: translateY(-70px); /* Starts 20px lower */
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0px);    /* Moves to its natural position */
-  }
-}
-
 .topbar {
     display: flex;
     flex-direction: row;
@@ -80,7 +70,16 @@ html, body {
 
     gap: 15px;
 
-    animation: topbarEntryAnim 0.5s var(--ease_custom) forwards;
+    /* animation: topbarEntryAnim 0.5s var(--ease_custom) forwards; */
+}
+
+.topbar button {
+    background-color: transparent;
+    border: 0;
+}
+
+.topbar button:hover {
+    cursor: pointer;
 }
 
 .topbar img {
@@ -195,4 +194,100 @@ html, body {
 .usermenu button .icon,
 .usermenu a .icon {
     font-size: 18px;
+}
+
+.logout_btn {
+    color: var(--text-color);
+}
+
+.logout_btn:hover {
+    color: var(--logout-color);
+}
+
+.viewport {
+    display: flex;
+    flex-direction: row; /* Containing sidebar and main viewport */
+
+    height: calc(100vh - 71px);
+    /* flex: 1; */
+    width: 100vw;
+}
+
+.sidebar {
+    width: 330px;
+    border-right: 1px solid var(--border-color);
+
+    background-color: var(--background);
+
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.sidebar a {
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+
+    padding: 20px;
+    font-size: 16px;
+
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.sidebar .icon {
+    margin-right: 10px;
+}
+
+.sidebar a div {
+    width: 5px;
+    height: 100%;
+    margin-right: 20px;
+    margin-left: -20px;
+    background-color: transparent;
+    /* border: 1px solid transparent; */
+
+    transition: 0.2s;
+}
+
+.sidebar .selected {
+    font-weight: bold;
+}
+
+.sidebar .selected div {
+    margin-left: 0;
+    background-color: var(--text-color);
+}
+
+.sidebar a:hover div {
+    margin-left: 0;
+    background-color: var(--border-color);
+}
+
+.view {
+    flex: 1;
+    height: calc(100vh - 71px);
+}
+
+.view iframe {
+    height: 100%;
+    width: 100%;
+    border: 0;
+}
+
+@media (max-width: 767px) {
+    /* Resize for phone users */
+    .sidebar {
+        /* transform: translateX(-330px); */
+        margin-left: -371px;
+        transition: .2s var(--ease_custom);
+        opacity: 0;
+    }
+
+    .sidebar.open {
+        transform: translateX(371px);
+        opacity: 1;
+    }
 }
