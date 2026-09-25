@@ -1,5 +1,5 @@
 from logger import *
-from app import app, start_monitoring, stop_monitoring, VERSION
+from app import *
 from ssl_manager import SSLManager
 
 import argparse
@@ -77,6 +77,10 @@ if __name__ == "__main__":
         perf_mon_thread = threading.Thread(target=start_monitoring)
         perf_mon_thread.start()
 
+        console.log(f"Started Minecraft server manager service")
+        mc_sv_manager_thread = threading.Thread(target=start_server_manager)
+        mc_sv_manager_thread.start()
+
         ssl_manager = None
         if args.ssl:
             if not args.email:
@@ -103,8 +107,8 @@ if __name__ == "__main__":
 
                 server = WSGIServer((HOST, PORT), app, numthreads=THREADCOUNT)
                 server.ssl_adapter = BuiltinSSLAdapter(
-                    certificate=ssl_manager.cert_path,
-                    private_key=ssl_manager.key_path,
+                    certificate=ssl_manager.cert_path, # pyright: ignore[reportOptionalMemberAccess]
+                    private_key=ssl_manager.key_path, # pyright: ignore[reportOptionalMemberAccess]
                 )
                 try:
                     server.start()
@@ -125,4 +129,6 @@ if __name__ == "__main__":
             if ssl_manager:
                 ssl_manager.stop()
             stop_monitoring()
+            stop_server_manager()
             perf_mon_thread.join()
+            mc_sv_manager_thread.join()

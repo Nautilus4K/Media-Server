@@ -8,10 +8,16 @@ import json
 import threading
 import bcrypt
 import secrets
+import subprocess
+import datetime
+import sys
 
 from collections import deque
 from logger import ConsoleLogger
 console = ConsoleLogger(True)
+
+dirPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/") + "/www/"
+sysPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
 # Monitoring settings
 MAX_SECONDS = 1800 # 30 minutes
@@ -164,11 +170,178 @@ def start_monitoring():
 def stop_monitoring():
     _stop_event.set()
 
+# Minecraft server management
+MC_SCRIPT = sysPath + "/minecraft_server.py"
+ 
+mc_run_flag = False    # Should the minecraft server be (re)started? (one-shot)
+mc_is_running = False  # Is the minecraft server currently running?
+ 
+console_output = []    # This is the minecraft console output as lines. Basically the output but split("\n")
+input_queue = deque()  # This is the input queue. Pending inputs are in here. The server manager should check
+                        # its left element to see the current pending input, the element to be removed is the left since its the oldest
+                        # in the queue.
+ 
+_console_lock = threading.Lock()  # guards console_output, since both the
+                                   # output reader thread and the input
+                                   # feeder thread append to it
+_mc_proc: subprocess.Popen | None = None  # the current server subprocess, if any
+_shutdown_event = threading.Event()  # set by stop_server_manager() to unwind everything
+ 
+RESTART_HOUR = 3
+RESTART_MINUTE = 30
+ 
+ 
+def _append_output(line: str) -> None:
+    with _console_lock:
+        console_output.append(line)
+ 
+ 
+def _read_server_output(proc: subprocess.Popen) -> None:
+    """Reads minecraft_server.py's stdout line by line, in realtime."""
+    assert proc.stdout is not None
+    for line in iter(proc.stdout.readline, ""):
+        if line == "":
+            break
+        _append_output(line.rstrip("\n"))
+ 
+ 
+def _feed_server_input(proc: subprocess.Popen) -> None:
+    """Watches input_queue and forwards pending commands to the server's stdin."""
+    assert proc.stdin is not None
+    while proc.poll() is None:
+        if input_queue:
+            command = input_queue.popleft()
+            try:
+                proc.stdin.write(command if command.endswith("\n") else command + "\n")
+                proc.stdin.flush()
+            except (BrokenPipeError, OSError):
+                break
+            _append_output("> " + command)
+        else:
+            time.sleep(0.05)
+ 
+ 
+def _run_minecraft_process() -> None:
+    """Starts minecraft_server.py and blocks until it exits."""
+    global mc_is_running, _mc_proc, console_output
+    console_output = [] # Restarting the output
+ 
+    proc = subprocess.Popen(
+        [sys.executable, MC_SCRIPT],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,  # line-buffered
+        encoding="utf-8",
+        errors="replace",
+    )
+    _mc_proc = proc
+    mc_is_running = True
+ 
+    out_thread = threading.Thread(target=_read_server_output, args=(proc,), daemon=True)
+    in_thread = threading.Thread(target=_feed_server_input, args=(proc,), daemon=True)
+    out_thread.start()
+    in_thread.start()
+ 
+    proc.wait()  # blocks the calling (manager) thread until the server exits
+    out_thread.join(timeout=5)
+    # in_thread exits on its own the moment proc.poll() stops returning None
+ 
+    mc_is_running = False
+    _mc_proc = None
+ 
+ 
+def _restart_scheduler() -> None:
+    """Triggers a graceful stop + kickstart every day at 3:30 AM."""
+    global mc_run_flag
+ 
+    while not _shutdown_event.is_set():
+        now = datetime.datetime.now()
+        target = now.replace(hour=RESTART_HOUR, minute=RESTART_MINUTE, second=0, microsecond=0)
+        if target <= now:
+            target += datetime.timedelta(days=1)
+ 
+        # Event.wait() returns True if the event was set before the
+        # timeout elapsed - use that to bail out early instead of
+        # sleeping through a shutdown request.
+        if _shutdown_event.wait(timeout=(target - now).total_seconds()):
+            return
+ 
+        if mc_is_running:
+            input_queue.append("stop")
+            # Wait for the current process to actually exit before asking
+            # for it to be started again - mc_run_flag only does anything
+            # while mc_is_running is False.
+            while mc_is_running:
+                if _shutdown_event.wait(timeout=1):
+                    return
+            if not _shutdown_event.is_set():
+                mc_run_flag = True
+        # If it was already off at 3:30, leave it off - mc_run_flag is an
+        # explicit "please start" signal, not something the scheduler
+        # should invent on its own.
+ 
+ 
+def start_server_manager() -> None:
+    """
+    Monitors mc_run_flag / mc_is_running and (re)starts minecraft_server.py
+    whenever a start is requested while nothing is running. Runs forever -
+    call this from its own thread.
+    """
+    global mc_run_flag, mc_is_running
+ 
+    threading.Thread(target=_restart_scheduler, daemon=True).start()
+ 
+    while not _shutdown_event.is_set():
+        if mc_run_flag and not mc_is_running and not _shutdown_event.is_set():
+            mc_run_flag = False
+            _run_minecraft_process()  # blocks here until the server stops
+        else:
+            _shutdown_event.wait(timeout=1)
+ 
+ 
+def stop_server_manager(timeout: float = 60) -> None:
+    """
+    Call this from the parent thread when the app wants to shut down.
+ 
+    Gracefully stops the Minecraft server if one is running, and tells
+    start_server_manager()'s loop (and the restart scheduler) to return
+    instead of continuing to run forever. Blocks until the server has
+    actually exited, or until `timeout` seconds pass - at which point it
+    force-kills the process rather than hanging indefinitely.
+ 
+    After calling this, the thread(s) running start_server_manager() will
+    finish on their own shortly; join() them if you need to be sure they
+    have before your program exits.
+    """
+    _shutdown_event.set()
+ 
+    if not mc_is_running:
+        return
+ 
+    proc_ref = _mc_proc  # snapshot before it can be cleared out from under us
+    input_queue.append("stop")
+ 
+    deadline = time.monotonic() + timeout
+    while mc_is_running and time.monotonic() < deadline:
+        time.sleep(0.5)
+ 
+    if mc_is_running and proc_ref is not None:
+        _append_output(f"> [manager] server did not stop within {timeout}s, forcing shutdown")
+        try:
+            proc_ref.terminate()
+            proc_ref.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc_ref.kill()
+        except OSError:
+            pass
+ 
+
+
+
 # This instance is my WSGI app
 app = Flask(__name__)
-
-dirPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/") + "/www/"
-sysPath = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
 # Login token special checkers
 session_tokens = {}
@@ -237,6 +410,10 @@ def home():
     # print(request.headers)
     return serve_generic_site(dirPath + "index.html", request.headers)
 
+@app.route("/minecraft")
+def minecraft():
+    return serve_generic_site(dirPath + "minecraft.html", request.headers)
+
 @app.route("/status")
 def status():
     return open(dirPath + "status.html", "r", encoding='utf-8').read(), 200
@@ -268,6 +445,39 @@ def get_status():
 
     return Response(json.dumps(form), mimetype="application/json"), 200
 
+# Minecraft server
+@app.route("/mc-get-console")
+def mc_get_console():
+    # Get console output
+    # But we need to make sure the user is an actually real user
+    if request.headers.get("Token") in session_tokens:
+        start_index = request.headers.get("Start")
+        if start_index:
+            return Response(json.dumps(console_output[int(start_index):]), mimetype="application/json"), 200
+        else:
+            return Response(json.dumps(console_output), mimetype="application/json"), 200
+    return Response("[]", mimetype="application/json"), 200
+
+@app.route("/mc-get-status")
+def mc_get_status():
+    # Get current mc server status
+    return Response(json.dumps(mc_is_running), mimetype="application/json"), 200
+
+@app.route("/mc-kickstart")
+def mc_start_server():
+    # Kickstart the server up
+    if request.headers.get("Token") in session_tokens:
+        global mc_run_flag
+        mc_run_flag = True
+    return Response("{}", mimetype="application/json"), 200
+
+@app.route("/mc-input-command")
+def mc_input_command():
+    # Input command into minecraft server
+    if request.headers.get("Token") in session_tokens:
+        command = request.headers.get("Command")
+        input_queue.append(command)
+    return Response("{}", mimetype="application/json"), 200
 
 # Logging in
 @app.route("/login")

@@ -509,4 +509,4 @@ async function updateUptime() {
 // Start
 setTimeout(pollData, 300);
 setTimeout(checkVisualMode, 200);
-setTimeout(updateUptime, 1000);
+setTimeout(updateUptime, 200);

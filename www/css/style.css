@@ -120,6 +120,7 @@ html, body {
     /* height: 200px; */
 
     border: 1px solid var(--border-color);
+    background-color: var(--background);
 
     top: 80px;
     right: 20px;
@@ -269,12 +270,20 @@ html, body {
 .view {
     flex: 1;
     height: calc(100vh - 71px);
+
+    display: flex;
+    flex-direction: column;
 }
 
 .view iframe {
     height: 100%;
     width: 100%;
     border: 0;
+}
+
+.view h1 {
+    margin: 30px;
+    font-size: 30px;
 }
 
 @media (max-width: 767px) {

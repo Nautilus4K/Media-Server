@@ -1,13 +1,15 @@
-<!-- DASHBOARD -->
+<!-- MINECRAFT SERVER -->
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Server managing panel</title>
+        <title>Minecraft | Server managing panel</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/minecraft.css">
         <link rel="icon" href="/favicon.svg">
 
         <script src="/src/general.js"></script>
+        <script src="/src/minecraft.js" defer></script>
 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=logout" />
     </head>
@@ -33,13 +35,24 @@
 
         <div class="viewport">
             <div class="sidebar" id="sidebar">
-                <a class="selected" href="/"><div></div> <span class="nf nf-md-view_dashboard_outline icon"></span> Dashboard</a>
+                <a class="" href="/"><div></div> <span class="nf nf-md-view_dashboard_outline icon"></span> Dashboard</a>
                 <a class=""><div></div><span class="nf nf-md-folder_outline icon"></span> Files</a>
-                <a class="" href="/minecraft"><div></div><span class="nf nf-md-minecraft icon"></span> Minecraft</a>
+                <a class="selected" href="/minecraft"><div></div><span class="nf nf-md-minecraft icon"></span> Minecraft</a>
             </div>
 
             <div class="view">
-                <iframe src="/status"></iframe>
+                <h1>Manage Minecraft Server</h1>
+                <div class="mc_main">
+                    <button class="startbtn" id="startbtn" onclick="startSv()"><span class="nf nf-md-play"></span> START</button>
+
+                    <div id="console" class="console">
+                        <p id="console_output" class="console_output"></p>
+                        <div class="console_input_row">
+                            <input type="text" placeholder="assert dominance" id="console_input" class="console_input">
+                            <button onclick="sendCmd()"><span class="nf nf-md-arrow_right"></span></button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </body>
