@@ -53,6 +53,7 @@ html, body {
     margin: 0;
     padding: 0;
     width: 100%;
+    /* overflow-x: hidden; */
 }
 
 .topbar {
@@ -269,6 +270,7 @@ html, body {
 
 .view {
     flex: 1;
+    min-width: 0;
     height: calc(100vh - 71px);
 
     display: flex;
@@ -287,16 +289,21 @@ html, body {
 }
 
 @media (max-width: 767px) {
-    /* Resize for phone users */
     .sidebar {
-        /* transform: translateX(-330px); */
-        margin-left: -371px;
+        position: fixed;
+        top: 71px;
+        left: 0;
+        height: calc(100vh - 71px);
+
+        margin-left: 0;              /* remove the old hack */
+        transform: translateX(-100%);
         transition: .2s var(--ease_custom);
         opacity: 0;
+        z-index: 10;
     }
 
     .sidebar.open {
-        transform: translateX(371px);
+        transform: translateX(0);
         opacity: 1;
     }
 }

@@ -2,6 +2,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 
     padding: 0 30px;
     padding-bottom: 30px;
@@ -46,6 +47,8 @@
     width: 100%;
     /* padding: 30px; */
     margin-top: 20px;
+    font-size: 16px;
+    min-width: 0;
 }
 
 .console .console_output {
@@ -54,7 +57,8 @@
 
     border: 1px solid var(--border-color);
     overflow-y: auto;
-    white-space: pre-line;
+    overflow-x: auto;
+    white-space: pre;
 }
 
 .console .console_input_row {
@@ -83,7 +87,6 @@
     width: 100%;
     padding: 15px;
     box-sizing: border-box;
-    font-size: 16px;
 
     font-family: var(--font-family);
 
@@ -91,4 +94,15 @@
     border: 1px solid var(--border-color);
     color: var(--text-color);
     outline: none;
+    font-size: 16px;
+}
+
+@media (max-width: 767px) {
+    .console {
+        font-size: 12px;
+    }
+
+    .console .console_input {
+        font-size: 12px;
+    }
 }
