@@ -51,8 +51,8 @@ if __name__ == "__main__":
                 new_user = str(input("Username: "))
 
                 while True:
-                    new_passwd = str(getpass.getpass("Password: ", echo_char="*"))
-                    confirm_passwd = str(getpass.getpass("Confirm Password: ", echo_char="*"))
+                    new_passwd = str(getpass.getpass("Password: "))
+                    confirm_passwd = str(getpass.getpass("Confirm Password: "))
 
                     if new_passwd == confirm_passwd: break
                     else: print("Passwords don't match!")
