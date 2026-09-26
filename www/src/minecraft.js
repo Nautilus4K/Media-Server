@@ -6,7 +6,9 @@ const console_output = document.getElementById("console_output")
 const console_input = document.getElementById("console_input")
 
 async function fetchSvStatus() {
-    fetch("/mc-get-status")
+    fetch("/mc-get-status", {
+        credentials: 'omit'
+    })
     .then(response => response.json())
     .then(data => {
         is_running = data;
@@ -47,7 +49,8 @@ async function fetchConsole() {
         headers: {
             "Token": getCookie("token"),
             "Start": (currentLatestLine + 1)
-        }
+        },
+        credentials: 'omit'
     })
     .then(response => response.json())
     .then(data => {
@@ -83,12 +86,12 @@ function sendCmd() {
         headers: {
             "Token": getCookie("token"),
             "Command": console_input.value
-        }
+        },
+        credentials: 'omit'
     })
 
     console_input.value = "";
 }
-
 
 function startSv() {
     if (is_running) return;
@@ -101,6 +104,82 @@ function startSv() {
     fetch('/mc-kickstart', {
         headers: {
             "Token": getCookie("token")
+        },
+        credentials: 'omit'
+    })
+}
+
+// Server properties editor
+const editor = ace.edit("editor");
+editor.setTheme("ace/theme/tomorrow_night");
+editor.session.setMode("ace/mode/properties");
+editor.setOptions({
+    fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace",
+    fontSize: "16px"
+});
+editor.setShowPrintMargin(false);
+// editor.setValue("app.name=MyApp\napp.version=1.0\n# a comment\nkey.with.dots=value", -1);
+// editor.setReadOnly(true); // uncomment if it's just a viewer
+const mediaQuery = window.matchMedia('(min-width: 768px)');
+mediaQuery.addEventListener("change", (e) => {
+    if (e.matches) {
+        // Alright this is a good screen (on desktop)
+        editor.setOptions({
+            fontSize: "16px"
+        });
+    } else {
+        editor.setOptions({
+            fontSize: "12px"
+        });
+    }
+});
+
+var fetchedProperties = false;
+
+function fetchProperties() {
+    fetch("/mc-get-properties", {
+        credentials: 'omit',
+        headers: {
+            "Token": getCookie("token")
         }
     })
+    .then(response => response.json())
+    .then(data => {
+        editor.setValue(data, -1);
+        fetchedProperties = true;
+    })
+}
+
+fetchProperties();
+
+const apply_prop_btn = document.getElementById('apply_prop_btn');
+async function resetApplyBtn() {
+    apply_prop_btn.disabled = false;
+    apply_prop_btn.innerHTML = "<span class=\"nf nf-md-check\"></span> APPLY";
+    apply_prop_btn.style.width = "130px";
+}
+
+function applyProperties() {
+    if (!fetchedProperties) return;
+
+    apply_prop_btn.disabled = true;
+    apply_prop_btn.textContent = "APPLYING";
+    apply_prop_btn.style.width = "150px";
+
+    fetch("/mc-apply-properties", {
+        method: 'POST',
+        headers: {
+            "Token": getCookie("token"),
+            'Content-Type': 'application/json'
+        },
+        credentials: 'omit',
+        body: JSON.stringify({
+            data: editor.getValue()
+        })
+    }).then(response => {
+        apply_prop_btn.innerHTML = "<span class=\"nf nf-md-check\"></span> APPLIED";
+        apply_prop_btn.style.width = "150px";
+
+        setTimeout(resetApplyBtn, 300);
+    });
 }

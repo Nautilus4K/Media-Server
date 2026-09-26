@@ -272,6 +272,7 @@ html, body {
     flex: 1;
     min-width: 0;
     height: calc(100vh - 71px);
+    overflow: auto;
 
     display: flex;
     flex-direction: column;

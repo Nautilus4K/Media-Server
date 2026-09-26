@@ -446,6 +446,8 @@ def get_status():
     return Response(json.dumps(form), mimetype="application/json"), 200
 
 # Minecraft server
+SERVER_PROPERTIES_PATH = sysPath + "/mc/server.properties"
+
 @app.route("/mc-get-console")
 def mc_get_console():
     # Get console output
@@ -456,7 +458,7 @@ def mc_get_console():
             return Response(json.dumps(console_output[int(start_index):]), mimetype="application/json"), 200
         else:
             return Response(json.dumps(console_output), mimetype="application/json"), 200
-    return Response("[]", mimetype="application/json"), 200
+    return Response("[]", mimetype="application/json"), 403
 
 @app.route("/mc-get-status")
 def mc_get_status():
@@ -469,7 +471,8 @@ def mc_start_server():
     if request.headers.get("Token") in session_tokens:
         global mc_run_flag
         mc_run_flag = True
-    return Response("{}", mimetype="application/json"), 200
+        return Response("{}", mimetype="application/json"), 200
+    return Response("{}", mimetype="application/json"), 403
 
 @app.route("/mc-input-command")
 def mc_input_command():
@@ -477,7 +480,25 @@ def mc_input_command():
     if request.headers.get("Token") in session_tokens:
         command = request.headers.get("Command")
         input_queue.append(command)
-    return Response("{}", mimetype="application/json"), 200
+        return Response("{}", mimetype="application/json"), 200
+    return Response("{}", mimetype="application/json"), 403
+
+@app.route("/mc-get-properties")
+def mc_get_properties():
+    # Get server.properties
+    if request.headers.get("Token") in session_tokens:
+        with open(SERVER_PROPERTIES_PATH, "r", encoding='utf-8') as f:
+            return Response(json.dumps(f.read()), mimetype="application/json"), 200
+    return Response("\"\"", mimetype="application/json"), 403
+
+@app.route("/mc-apply-properties", methods=['POST'])
+def mc_apply_properties():
+    if request.headers.get("Token") in session_tokens:
+        with open(SERVER_PROPERTIES_PATH, "w", encoding='utf-8') as f:
+            f.write(request.get_json()["data"])
+
+        return Response("{}", mimetype="application/json"), 200
+    return Response("{}", mimetype="application/json"), 403
 
 # Logging in
 @app.route("/login")

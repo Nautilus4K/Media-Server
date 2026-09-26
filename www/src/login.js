@@ -24,7 +24,8 @@ if (getCookie("token") != "") {
     fetch('/check-auth', {
         headers: {
             "Token": getCookie("token")
-        }
+        },
+        credentials: 'omit'
     })
     .then(response => response.json())
     .then(data => {
@@ -51,7 +52,8 @@ function login() {
         headers: {
             "Username": username,
             "Password": password
-        }
+        },
+        credentials: 'omit'
     })
     .then(response => response.json())
     .then(data => {

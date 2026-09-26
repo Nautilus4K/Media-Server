@@ -63,6 +63,13 @@ def setup_server(latest_mc_version: str, latest_build: str) -> None:
         if file.endswith(".jar") and file.startswith("purpur"):
             existing_jar = file
 
+    if existing_jar.split('-')[1] != latest_mc_version:
+        print(f"Latest version is a new major version {latest_mc_version}. Do you want to update? (Y/n)")
+        r = str(input())
+        if r.lower != "y":
+            print("Skipping update.")
+            return
+
     if existing_jar != "":
         print("Updating server jar", flush=True)
         os.remove(dirPath + existing_jar)
