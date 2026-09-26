@@ -114,6 +114,8 @@
     height: 600px;
     border: 1px solid var(--border-color);
     margin-bottom: 30px;
+
+    font-size: 16px;
 }
 
 .console .server_properties_btn_container {
@@ -134,6 +136,10 @@
     }
 
     .console .console_input {
+        font-size: 12px;
+    }
+
+    .console .server_properties {
         font-size: 12px;
     }
 }

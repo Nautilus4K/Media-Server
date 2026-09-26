@@ -115,24 +115,10 @@ editor.setTheme("ace/theme/tomorrow_night");
 editor.session.setMode("ace/mode/properties");
 editor.setOptions({
     fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace",
-    fontSize: "16px"
 });
 editor.setShowPrintMargin(false);
 // editor.setValue("app.name=MyApp\napp.version=1.0\n# a comment\nkey.with.dots=value", -1);
 // editor.setReadOnly(true); // uncomment if it's just a viewer
-const mediaQuery = window.matchMedia('(min-width: 768px)');
-mediaQuery.addEventListener("change", (e) => {
-    if (e.matches) {
-        // Alright this is a good screen (on desktop)
-        editor.setOptions({
-            fontSize: "16px"
-        });
-    } else {
-        editor.setOptions({
-            fontSize: "12px"
-        });
-    }
-});
 
 var fetchedProperties = false;
 
