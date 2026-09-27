@@ -12,6 +12,8 @@ async function fetchSvStatus() {
     .then(response => response.json())
     .then(data => {
         is_running = data;
+
+        if (!fetched_status) start_btn_element.disabled = false; // In case the user just started the site
         fetched_status = true;
 
         // console.log(is_running);

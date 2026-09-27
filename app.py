@@ -11,6 +11,7 @@ import secrets
 import subprocess
 import datetime
 import sys
+import pathlib
 
 from collections import deque
 from logger import ConsoleLogger
@@ -380,23 +381,6 @@ def get_user(headers: Headers) -> str | None:
 # MINECRAFT_SELECTED = 0x4FFF
 def serve_generic_site(path: str, headers: Headers):
     if (check_token(headers)):
-        # OK
-        # if selected_highlight == DASHBOARD_SELECTED:
-        #     return render_template_string(
-        #         open(path, "r", encoding='utf-8').read(),
-        #         server_name=NAME, user_name=get_user(headers), dashboard_selected=SELECTED_CLASSNAME
-        #     ), 200
-        # elif selected_highlight == FILES_SELECTED:
-        #     return render_template_string(
-        #         open(path, "r", encoding='utf-8').read(),
-        #         server_name=NAME, user_name=get_user(headers), files_selected=SELECTED_CLASSNAME
-        #     ), 200
-        # elif selected_highlight == MINECRAFT_SELECTED:
-        #     return render_template_string(
-        #         open(path, "r", encoding='utf-8').read(),
-        #         server_name=NAME, user_name=get_user(headers), minecraft_selected=SELECTED_CLASSNAME
-        #     ), 200
-        # else:
         return render_template_string(
             open(path, "r", encoding='utf-8').read(),
             server_name=NAME, user_name=get_user(headers)
@@ -444,6 +428,87 @@ def get_status():
     }
 
     return Response(json.dumps(form), mimetype="application/json"), 200
+
+# File browser
+FILES_ROOT = sysPath + "/usercontent/"
+
+def sorted_listdir(path: pathlib.Path):
+    """
+    Works like os.listdir(), but returns items ordered:
+    1. Folders first (A-Z)
+    2. Files grouped by extension (A-Z), then sorted by name (A-Z)
+    """
+    def sort_key(name):
+        full_path = os.path.join(path, name)
+        is_file = os.path.isfile(full_path)
+        
+        # Get extension for files, empty string for directories
+        ext = os.path.splitext(name)[1].lower() if is_file else ""
+        
+        return (is_file, ext, name.lower())
+
+    return sorted(os.listdir(path), key=sort_key)
+
+from classifier import classify_file, FileCategory
+
+# special server for files sites
+def serve_files_site(path: str, headers: Headers):
+    if (check_token(headers)):
+        while path.endswith("/"): path = path[:-1]
+        if not path.startswith("/"): path = "/" + path
+
+        # This request is TUFF
+        # Which means the user sure is authorized
+        files_htmls = ""
+
+        def_path = pathlib.Path(path)
+        realpath = pathlib.Path(FILES_ROOT) / path[1:]
+
+        # There are 2 kind of files: Files and folders
+        # And also there are multiple kind of files
+        # so...
+
+        file_type = ""
+        if realpath.is_dir():
+            files = sorted_listdir(realpath)
+            file_type = "folder"
+            for entry in files:
+                relative_path = def_path / entry
+
+                nf_icon_class= "nf-md-file"
+                if ((realpath / entry).is_dir()): nf_icon_class= "nf-md-folder" # A folder?
+                else:
+                    category = classify_file(entry)
+                    if   category == FileCategory.AUDIO: nf_icon_class = "nf-md-music"
+                    elif category == FileCategory.VIDEO: nf_icon_class = "nf-md-movie"
+                    elif category == FileCategory.CODE:  nf_icon_class = "nf-md-code_braces"
+                    elif category == FileCategory.COMPRESSED: nf_icon_class = "nf-md-folder_zip"
+                    elif category == FileCategory.EXECUTABLE: nf_icon_class = "nf-md-application_cog"
+                    elif category == FileCategory.IMAGE: nf_icon_class = "nf-md-image"
+                    elif category == FileCategory.TEXT: nf_icon_class = "nf-md-file_document"
+
+                files_htmls += f'<a class="folder_btn" href="/files{relative_path}"><div><span class="nf {nf_icon_class} icon"></span> <p>{entry}</p></div></a>'
+        elif not realpath.exists():
+            # If this path doesn't exist
+            file_type = ""
+            files_htmls = '<div class="notice"><p>FILE DOES NOT EXIST</p></div>'
+
+        return render_template_string(
+            open(dirPath + "files.html", "r", encoding='utf-8').read(),
+            server_name=NAME, user_name=get_user(headers), parent_folder=def_path.parent, current_path=path, file_type=file_type
+        ).replace("%%files_html_area%%", files_htmls), 200
+    else:
+        return redirect(url_for('login_page'))
+
+@app.route("/files", defaults={"filepath": ""}) # Backup for root
+@app.route("/files/", defaults={"filepath": ""}) # Backup for root
+@app.route("/files/<path:filepath>")
+def get_path_site(filepath: str):
+    # basically if this path is a folder, returns folder content as a site
+    # if this path is a file, returns file data (BINARY)
+    # if request.headers.get("Token") in session_tokens:
+    pathlib.Path(FILES_ROOT).mkdir(parents=True, exist_ok=True)
+    return serve_files_site(filepath, request.headers)
 
 # Minecraft server
 SERVER_PROPERTIES_PATH = sysPath + "/mc/server.properties"

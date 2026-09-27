@@ -118,7 +118,14 @@
     cursor: pointer;
     outline: none;
 
+    scale: 100%;
     background-color: var(--primary-color);
+}
+
+.login_fields_container button:active {
+    background-color: var(--text-color);
+    color: var(--background);
+    scale: 90%;
 }
 
 .login_fields_container .error_alert {
