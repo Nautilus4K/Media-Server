@@ -74,12 +74,15 @@ if __name__ == "__main__":
 
     else:
         console.log(f"Started performance monitoring service")
-        perf_mon_thread = threading.Thread(target=start_monitoring)
+        perf_mon_thread = threading.Thread(target=start_monitoring, daemon=True)
         perf_mon_thread.start()
 
         console.log(f"Started Minecraft server manager service")
         mc_sv_manager_thread = threading.Thread(target=start_server_manager)
         mc_sv_manager_thread.start()
+
+        cam_watchdog_thread = threading.Thread(target=watchdog, daemon=True)
+        cam_watchdog_thread.start()
 
         ssl_manager = None
         if args.ssl:
@@ -130,5 +133,7 @@ if __name__ == "__main__":
                 ssl_manager.stop()
             stop_monitoring()
             stop_server_manager()
+            watchdog_shutdown()
             perf_mon_thread.join()
+            cam_watchdog_thread.join()
             mc_sv_manager_thread.join()

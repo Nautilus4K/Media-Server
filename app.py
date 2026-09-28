@@ -1,4 +1,4 @@
-from flask import Flask, send_file, abort, Response, request, render_template_string, redirect, url_for
+from flask import Flask, send_file, abort, Response, request, render_template_string, redirect, url_for, send_from_directory
 from werkzeug.datastructures import Headers
 # from http.cookies import SimpleCookie
 import os
@@ -12,8 +12,10 @@ import subprocess
 import datetime
 import sys
 import pathlib
-
+import shutil
 from collections import deque
+from typing import Dict, Optional
+
 from logger import ConsoleLogger
 console = ConsoleLogger(True)
 
@@ -172,8 +174,13 @@ def stop_monitoring():
     _stop_event.set()
 
 # Minecraft server management
+# // CONFIGURATION //
 MC_SCRIPT = sysPath + "/minecraft_server.py"
- 
+RESTART_HOUR = 3
+RESTART_MINUTE = 30
+
+
+# Processes/locks
 mc_run_flag = False    # Should the minecraft server be (re)started? (one-shot)
 mc_is_running = False  # Is the minecraft server currently running?
  
@@ -188,10 +195,8 @@ _console_lock = threading.Lock()  # guards console_output, since both the
 _mc_proc: subprocess.Popen | None = None  # the current server subprocess, if any
 _shutdown_event = threading.Event()  # set by stop_server_manager() to unwind everything
  
-RESTART_HOUR = 3
-RESTART_MINUTE = 30
  
- 
+# Functionality
 def _append_output(line: str) -> None:
     with _console_lock:
         console_output.append(line)
@@ -338,7 +343,106 @@ def stop_server_manager(timeout: float = 60) -> None:
         except OSError:
             pass
  
+# Camera viewing service
+# // CONFIGURATION //
+RTSP_URLS = [
+    "rtsp://admin:abc12345@192.168.1.167:554/Streaming/channels/101",   # index 0
+    "rtsp://admin:abc12345@192.168.1.167:554/Streaming/channels/201",   # index 1
+    "rtsp://admin:abc12345@192.168.1.167:554/Streaming/channels/301",   # index 2
+    "rtsp://admin:abc12345@192.168.1.167:554/Streaming/channels/401",   # index 3
+]
+ 
+HLS_ROOT = "/dev/shm/hls_stream"  # tmpfs = RAM, no disk wear
+SEGMENT_TIME = "2"                # seconds per .ts segment
+LIST_SIZE = "6"                   # segments kept in the live playlist
+IDLE_TIMEOUT = 30                 # stop a camera's ffmpeg after this many idle seconds
 
+
+# The process/locks
+_num_cams = len(RTSP_URLS)
+_procs: Dict[int, Optional[subprocess.Popen]] = {i: None for i in range(_num_cams)}                  # index -> Popen or None
+_locks = {i: threading.Lock() for i in range(_num_cams)}       # one lock per camera
+_last_request = {i: 0.0 for i in range(_num_cams)}              # last time each camera was polled
+ 
+ 
+def _cam_dir(index):
+    return os.path.join(HLS_ROOT, str(index))
+ 
+ 
+def _playlist_path(index):
+    return os.path.join(HLS_ROOT, f"{index}.m3u8")
+ 
+ 
+def _ffmpeg_cmd(index):
+    cam_dir = _cam_dir(index)
+    return [
+        "ffmpeg",
+        "-rtsp_transport", "tcp",
+        "-i", RTSP_URLS[index],
+        "-c:v", "copy",
+        "-c:a", "copy",
+        "-f", "hls",
+        "-hls_time", SEGMENT_TIME,
+        "-hls_list_size", LIST_SIZE,
+        "-hls_flags", "delete_segments+append_list+omit_endlist",
+        "-hls_base_url", f"{index}/",   # playlist entries become "<index>/seg_00001.ts"
+        "-hls_segment_filename", os.path.join(cam_dir, "seg_%05d.ts"),
+        _playlist_path(index),          # physical playlist file is "<index>.m3u8"
+    ]
+ 
+ 
+def _start_ffmpeg(index):
+    with _locks[index]:
+        proc = _procs[index]
+        if proc is not None and proc.poll() is None:
+            return  # already running
+        shutil.rmtree(_cam_dir(index), ignore_errors=True)
+        os.makedirs(_cam_dir(index), exist_ok=True)
+        _procs[index] = subprocess.Popen(
+            _ffmpeg_cmd(index),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+ 
+ 
+def _stop_ffmpeg(index):
+    with _locks[index]:
+        proc = _procs[index]
+        if proc is not None and proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+        _procs[index] = None
+ 
+ 
+_watchdog_stop = threading.Event()
+ 
+def watchdog():
+    # Event.wait(5) sleeps up to 5s but returns True immediately if stop() is called,
+    # so this exits promptly instead of finishing out its current sleep first.
+    while not _watchdog_stop.wait(5):
+        for index in range(_num_cams):
+            with _locks[index]:
+                proc = _procs[index]
+                running = proc is not None and proc.poll() is None
+            has_had_viewer = _last_request[index] > 0
+            idle = (time.time() - _last_request[index]) > IDLE_TIMEOUT
+            if running and has_had_viewer and idle:
+                _stop_ffmpeg(index)
+            elif not running and has_had_viewer and not idle:
+                _start_ffmpeg(index)  # crashed/dropped while someone was still watching
+
+def watchdog_shutdown(signum=None, frame=None):
+    _watchdog_stop.set()                # tell the watchdog loop to exit
+    for index in range(_num_cams):
+        _stop_ffmpeg(index)             # actually terminate/kill the ffmpeg children
+
+ 
+def _check_index(index):
+    if index < 0 or index >= _num_cams:
+        abort(404)
 
 
 # This instance is my WSGI app
@@ -492,6 +596,9 @@ def serve_files_site(path: str, headers: Headers):
             # If this path doesn't exist
             file_type = ""
             files_htmls = '<div class="notice"><p>FILE DOES NOT EXIST</p></div>'
+        else:
+            file_type = ""
+            files_htmls = '<div class="notice"><p>FILE VIEWING NOT IMPLEMENTED</p></div>'
 
         return render_template_string(
             open(dirPath + "files.html", "r", encoding='utf-8').read(),
@@ -564,6 +671,48 @@ def mc_apply_properties():
 
         return Response("{}", mimetype="application/json"), 200
     return Response("{}", mimetype="application/json"), 403
+
+# HikConnect camera
+@app.route("/camera")
+def camera_page():
+    return serve_generic_site(dirPath + "camera.html", request.headers)
+
+@app.route("/hls/<int:index>.m3u8")
+def hls_playlist(index):
+    if not check_token(request.headers):
+        abort(403)
+    _check_index(index)
+    _last_request[index] = time.time()
+
+    proc = _procs[index]
+    if proc is None or proc.poll() is not None:
+        _start_ffmpeg(index)
+        for _ in range(20):
+            if os.path.exists(_playlist_path(index)):
+                break
+            time.sleep(0.25)
+
+    if not os.path.exists(_playlist_path(index)):
+        abort(404)
+
+    resp = send_from_directory(HLS_ROOT, f"{index}.m3u8")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+@app.route("/hls/<int:index>/<path:filename>")
+def hls_segment(index, filename):
+    if not check_token(request.headers):
+        abort(403)
+    _check_index(index)
+    _last_request[index] = time.time()
+
+    cam_dir = _cam_dir(index)
+    full_path = os.path.join(cam_dir, filename)
+    if not os.path.exists(full_path):
+        abort(404)
+    return send_from_directory(cam_dir, filename)
+
 
 # Logging in
 @app.route("/login")

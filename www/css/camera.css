@@ -1,0 +1,34 @@
+.grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap:20px;
+
+    margin: 30px;
+}
+
+.cam {
+    position: relative;
+    text-align:center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.cam-label {
+    /* margin-bottom:4px; */
+    position: absolute;
+    bottom: 20px;         /* Distance from the top edge */
+    left: 20px;        /* Distance from the left edge */
+    color: var(--text-color);
+    z-index: 10;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6); 
+}
+
+video {
+    width:100%;
+    display:block;
+    background:#000;
+    object-fit: cover;
+
+    -webkit-mask-image: linear-gradient(45deg,rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.62) 19%, rgba(0, 0, 0, 1) 39%, rgba(0, 0, 0, 1) 100%);
+    mask-image: linear-gradient(45deg,rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.62) 19%, rgba(0, 0, 0, 1) 39%, rgba(0, 0, 0, 1) 100%);
+}

@@ -5,9 +5,11 @@
         <title>Server managing panel</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/camera.css">
         <link rel="icon" href="/favicon.svg">
 
         <script src="/src/general.js"></script>
+        <script src="/src/camera.js" defer></script>
 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=logout" />
     </head>
@@ -33,14 +35,14 @@
 
         <div class="viewport">
             <div class="sidebar" id="sidebar">
-                <a class="selected" href="/"><div></div> <span class="nf nf-md-view_dashboard_outline icon"></span> Dashboard</a>
+                <a class="" href="/"><div></div> <span class="nf nf-md-view_dashboard_outline icon"></span> Dashboard</a>
                 <a class="" href="/files"><div></div><span class="nf nf-md-folder_outline icon"></span> Files</a>
                 <a class="" href="/minecraft"><div></div><span class="nf nf-md-minecraft icon"></span> Minecraft</a>
-                <a class="" href="/camera"><div></div><span class="nf nf-md-camera icon"></span> Camera</a>
+                <a class="selected" href="/camera"><div></div><span class="nf nf-md-camera icon"></span> Camera</a>
             </div>
 
             <div class="view">
-                <iframe src="/status"></iframe>
+                <div id="grid" class="grid"></div>
             </div>
         </div>
     </body>
