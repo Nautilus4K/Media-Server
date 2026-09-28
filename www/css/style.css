@@ -131,6 +131,8 @@ html, body {
     transition: 0.2s var(--ease_custom);
 
     overflow: hidden;
+
+    z-index: 20;
 }
 
 .usermenu.hidden {
